@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mevzuat Asistanı — Elektrik Dağıtım</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M13 2 L4 13 H10.5 L9 22 L20 9 H13.5 L13 2 Z" fill="currentColor"/>
+    </svg>
+    <span class="brand-word">Mevzuat<span class="brand-word-dim">Hat</span></span>
+  </div>
+  <button type="button" class="new-chat-btn" id="newChatBtn" hidden>Yeni sohbet</button>
+</header>
+
+<main class="stage">
+
+  <section class="hero" id="hero">
+    <div class="hero-mark-wrap" aria-hidden="true">
+      <svg class="hero-mark" viewBox="0 0 100 100" fill="none">
+        <path id="boltPath" d="M54 8 L20 54 H46 L38 92 L82 42 H56 L54 8 Z" fill="#4c8dff"/>
+      </svg>
+    </div>
+    <h1 class="headline">Bugün size nasıl yardımcı olabilirim?</h1>
+    <p class="subhead">EPDK mevzuatı üzerinde arama yapar, her cevabı madde ve fıkra
+      referansıyla kaynaklandırır.</p>
+  </section>
+
+  <section class="conversation" id="conversation">
+    <div class="qa-scroll" id="qaScroll"></div>
+  </section>
+
+  <div class="composer-dock" id="composerDock">
+    <form class="ask-panel" id="askForm">
+      <div class="ask-panel-inner">
+        <textarea
+          id="questionInput"
+          class="ask-input"
+          placeholder="Mevzuatla ilgili bir şey sorun…"
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button type="submit" class="ask-submit" id="askSubmit" aria-label="Gönder">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    <div class="quick-chips" id="quickChips">
+      <button type="button" class="chip" data-q="Bağlantı ve sistem kullanım anlaşması nasıl yapılır?">Bağlantı talebi</button>
+      <button type="button" class="chip" data-q="OSB katılımcılarının sisteme bağlantısı hangi mevzuata tabidir?">OSB bağlantısı</button>
+      <button type="button" class="chip" data-q="Kesinti süresi aştığında kullanıcılara ödenecek tazminat nasıl hesaplanır?">Kesinti tazminatı</button>
+      <button type="button" class="chip" data-q="EV şarj hizmeti hangi lisans kapsamında yürütülür?">EV şarj bağlantısı</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

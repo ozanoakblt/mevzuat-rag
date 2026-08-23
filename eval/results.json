@@ -1,0 +1,356 @@
+{
+  "summary": {
+    "total_questions": 49,
+    "recall_at_5_overall": 1.0,
+    "recall_at_5_kolay": 1.0,
+    "recall_at_5_orta": 1.0,
+    "recall_at_5_zor": 1.0,
+    "negative_test_success_rate": 0.75,
+    "negative_test_count": 4
+  },
+  "results": [
+    {
+      "id": "q01",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 4.325741291046143,
+      "recall_hit": true
+    },
+    {
+      "id": "q02",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 5.733879566192627,
+      "recall_hit": true
+    },
+    {
+      "id": "q03",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 10.320282936096191,
+      "recall_hit": true
+    },
+    {
+      "id": "q04",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 3.359755754470825,
+      "recall_hit": true
+    },
+    {
+      "id": "q05",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 3.914789915084839,
+      "recall_hit": true
+    },
+    {
+      "id": "q06",
+      "difficulty": "zor",
+      "is_negative_test": false,
+      "best_rerank_score": 10.367209434509277,
+      "recall_hit": true
+    },
+    {
+      "id": "q07",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 7.773464679718018,
+      "recall_hit": true
+    },
+    {
+      "id": "q08",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 10.894914627075195,
+      "recall_hit": true
+    },
+    {
+      "id": "q09",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 7.065638065338135,
+      "recall_hit": true
+    },
+    {
+      "id": "q10",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 4.2114787101745605,
+      "recall_hit": true
+    },
+    {
+      "id": "q11",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 5.226635932922363,
+      "recall_hit": true
+    },
+    {
+      "id": "q12",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 7.033300399780273,
+      "recall_hit": true
+    },
+    {
+      "id": "q13",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 3.0801074504852295,
+      "recall_hit": true
+    },
+    {
+      "id": "q14",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 1.2784514427185059,
+      "recall_hit": true
+    },
+    {
+      "id": "q15",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 3.6778221130371094,
+      "recall_hit": true
+    },
+    {
+      "id": "q16",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 0.8902474045753479,
+      "recall_hit": true
+    },
+    {
+      "id": "q17",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 2.4090936183929443,
+      "recall_hit": true
+    },
+    {
+      "id": "q18",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 7.337226867675781,
+      "recall_hit": true
+    },
+    {
+      "id": "q19",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 3.137789487838745,
+      "recall_hit": true
+    },
+    {
+      "id": "q20",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": -1.2140858173370361,
+      "recall_hit": true
+    },
+    {
+      "id": "q21",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 1.2912598848342896,
+      "recall_hit": true
+    },
+    {
+      "id": "q22",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 3.276075601577759,
+      "recall_hit": true
+    },
+    {
+      "id": "q23",
+      "difficulty": "zor",
+      "is_negative_test": true,
+      "best_rerank_score": -2.2057371139526367,
+      "correct_low_confidence": true
+    },
+    {
+      "id": "q24",
+      "difficulty": "zor",
+      "is_negative_test": true,
+      "best_rerank_score": -4.949568271636963,
+      "correct_low_confidence": true
+    },
+    {
+      "id": "q25",
+      "difficulty": "zor",
+      "is_negative_test": true,
+      "best_rerank_score": -3.124695062637329,
+      "correct_low_confidence": true
+    },
+    {
+      "id": "q26",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": -0.03077828511595726,
+      "recall_hit": true
+    },
+    {
+      "id": "q27",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 0.3828231394290924,
+      "recall_hit": true
+    },
+    {
+      "id": "q28",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 9.212340354919434,
+      "recall_hit": true
+    },
+    {
+      "id": "q29",
+      "difficulty": "zor",
+      "is_negative_test": false,
+      "best_rerank_score": 3.716135025024414,
+      "recall_hit": true
+    },
+    {
+      "id": "q30",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 4.710168361663818,
+      "recall_hit": true
+    },
+    {
+      "id": "q31",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 9.886590957641602,
+      "recall_hit": true
+    },
+    {
+      "id": "q32",
+      "difficulty": "zor",
+      "is_negative_test": false,
+      "best_rerank_score": 4.538172245025635,
+      "recall_hit": true
+    },
+    {
+      "id": "q33",
+      "difficulty": "zor",
+      "is_negative_test": false,
+      "best_rerank_score": 2.295607805252075,
+      "recall_hit": true
+    },
+    {
+      "id": "q34",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 0.23892581462860107,
+      "recall_hit": true
+    },
+    {
+      "id": "q35",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 2.9119598865509033,
+      "recall_hit": true
+    },
+    {
+      "id": "q36",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 3.191335916519165,
+      "recall_hit": true
+    },
+    {
+      "id": "q37",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 10.696120262145996,
+      "recall_hit": true
+    },
+    {
+      "id": "q38",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 3.5184340476989746,
+      "recall_hit": true
+    },
+    {
+      "id": "q39",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 2.1309430599212646,
+      "recall_hit": true
+    },
+    {
+      "id": "q40",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 6.672441005706787,
+      "recall_hit": true
+    },
+    {
+      "id": "q41",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 1.2022626399993896,
+      "recall_hit": true
+    },
+    {
+      "id": "q42",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 1.0811691284179688,
+      "recall_hit": true
+    },
+    {
+      "id": "q43",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 9.352221488952637,
+      "recall_hit": true
+    },
+    {
+      "id": "q44",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 6.311775207519531,
+      "recall_hit": true
+    },
+    {
+      "id": "q45",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 2.1335363388061523,
+      "recall_hit": true
+    },
+    {
+      "id": "q46",
+      "difficulty": "kolay",
+      "is_negative_test": false,
+      "best_rerank_score": 4.026541709899902,
+      "recall_hit": true
+    },
+    {
+      "id": "q47",
+      "difficulty": "orta",
+      "is_negative_test": false,
+      "best_rerank_score": 7.3367486000061035,
+      "recall_hit": true
+    },
+    {
+      "id": "q48",
+      "difficulty": "zor",
+      "is_negative_test": false,
+      "best_rerank_score": 7.371763706207275,
+      "recall_hit": true
+    },
+    {
+      "id": "q49",
+      "difficulty": "zor",
+      "is_negative_test": true,
+      "best_rerank_score": 2.039248466491699,
+      "correct_low_confidence": false
+    }
+  ]
+}
