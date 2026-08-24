@@ -43,6 +43,7 @@ from src.generation.citation_guard import format_guard_warnings, run_guard
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.hybrid import hybrid_search
+from src.retrieval.query_expansion import expand_query
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,8 +51,8 @@ PROCESSED_DIR = ROOT / "data" / "processed"
 VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-CANDIDATE_POOL_SIZE = 20
-FINAL_TOP_K = 5
+CANDIDATE_POOL_SIZE = 30
+FINAL_TOP_K = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 
 # --- Bileşenler: sunucu başlarken bir kez yüklenir ---
@@ -116,15 +117,27 @@ def ask(req: AskRequest) -> AskResponse:
             detail="Vektör index boş. Önce scripts/build_index.py çalıştırın.",
         )
 
-    candidates = hybrid_search(
-        question,
-        _state["embedder"],
-        vector_store,
-        _state["bm25_index"],
-        top_k=CANDIDATE_POOL_SIZE,
-    )
+    sub_queries = expand_query(question)
+    candidates_by_id: dict[str, dict] = {}
+    guard_ids: list[str] = []
+    for sq in sub_queries:
+        sq_results = hybrid_search(
+            sq,
+            _state["embedder"],
+            vector_store,
+            _state["bm25_index"],
+            top_k=CANDIDATE_POOL_SIZE,
+        )
+        for i, r in enumerate(sq_results):
+            cid = r["chunk_id"]
+            if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
+                candidates_by_id[cid] = r
+            if i < 5 and cid not in guard_ids:
+                guard_ids.append(cid)
+    candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
+    guard_pool = [candidates_by_id[cid] for cid in guard_ids]
     top_chunks = _state["reranker"].rerank_with_safety_net(
-        question, candidates, top_k=FINAL_TOP_K
+        question, candidates, top_k=FINAL_TOP_K, guard_pool=guard_pool
     )
 
     answer = generate_answer(question, top_chunks, doc_titles=DOC_TITLES)
@@ -165,3 +178,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+
+

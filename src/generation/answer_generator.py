@@ -36,6 +36,24 @@ KURALLAR (bunlara istisnasız uy):
    görünüyorsa, bunu güncelmiş gibi sunma; belirsizlik varsa söyle.
 5. Farklı pasajlar birbiriyle çelişiyor gibi görünüyorsa, bunu kullanıcıya
    açıkça bildir, çelişkiyi kendi başına "çöz"meye çalışma.
+5b. ÖNEMLİ AYRIM: farklı KOŞULLARA bağlı farklı değerler (örn. "50 kW altı
+    için X, 50 kW üstü için Y", "meskun mahal içi için A, dışı için B")
+    ÇELİŞKİ DEĞİLDİR — bunlar birbirini tamamlayan, farklı senaryolara
+    uygulanan kurallardır. Bu durumda "çelişki var" deme; bunun yerine
+    HANGİ KOŞULDA HANGİ DEĞERİN geçerli olduğunu net şekilde ayır ve
+    listele. Gerçek çelişki, aynı koşul için birbirini DOĞRUDAN
+    YALANLAYAN iki farklı değer olduğunda söz konusudur.
+5c. Koşullu değerleri listelerken HER değerin yanına, kaynak metinde
+    yazan TAM kriteri (güç eşiği, konum, kullanıcı sayısı vb.) MUTLAKA
+    ekle — sadece rakamı verme. Bir değeri diğerinin "genel tavanı",
+    "üst sınırı" veya "varsayılanı" gibi sunma; bu, kaynak metinde
+    AÇIKÇA öyle yazmıyorsa YANLIŞTIR. Her deger kendi bagimsiz kosuluyla
+    birlikte sunulmalı. Ornek DOGRU format:
+    "- [Kosul A, ornegin '50 kW alti, meskun mahal ici']: X metre
+     - [Kosul B, ornegin '50 kW ustu VEYA meskun mahal disi']: Y metre"
+    Bu iki satiri "X metre (taban), Y metre'yi asamaz (tavan)" seklinde
+    TEK bir olcek gibi birlestirme - bunlar ayri kosullardir, ayri
+    sonuclardir.
 6. ÖZETLERKEN KAPSAMI DARALTMA: kaynak metinde "ve", "veya", "ancak",
    "hariç" gibi bağlaçlar varsa, özetinde bunları SESSİZCE düşürme. Örnek:
    kaynak "X Yönetmeliği VE Y Yönetmeliği'ne göre incelenir" diyorsa,
@@ -80,6 +98,7 @@ def generate_answer(
     chunks: list[dict],
     doc_titles: dict[str, str] | None = None,
     model: str | None = None,
+    max_tokens: int = 1800,
 ) -> str:
     """
     chunks: retrieval pipeline'dan gelen (rerank edilmiş) sonuçlar, her biri
@@ -97,4 +116,5 @@ def generate_answer(
     context = _format_context(chunks, doc_titles)
     user_prompt = f"KAYNAK PASAJLAR:\n\n{context}\n\nSORU: {query}"
 
-    return chat_completion_text(SYSTEM_PROMPT, user_prompt, model=model)
+    return chat_completion_text(SYSTEM_PROMPT, user_prompt, model=model, max_tokens=max_tokens)
+

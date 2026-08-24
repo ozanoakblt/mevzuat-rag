@@ -59,17 +59,18 @@ def test_ask_happy_path_returns_structured_response():
         "madde_baslik": "Amaç",
         "text": "Bu maddenin amacı test etmektir.",
         "rerank_score": 3.5,
+        "rrf_score": 0.05,
     }
 
     class FakeReranker:
-        def rerank_with_safety_net(self, query, candidates, top_k=5):
+        def rerank_with_safety_net(self, query, candidates, top_k=5, guard_pool=None):
             return [fake_chunk]
 
     web_app._state["reranker"] = FakeReranker()
 
     with patch.object(web_app, "hybrid_search", return_value=[fake_chunk]), patch.object(
         web_app, "generate_answer", return_value="Test cevabı [1]."
-    ):
+    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]):
         result = web_app.ask(web_app.AskRequest(question="test sorusu"))
 
     assert result.answer == "Test cevabı [1]."
@@ -88,3 +89,4 @@ def test_health_endpoint_reports_ok_when_ready():
     web_app._state["vector_store"] = FakeVectorStore()
     health = web_app.health()
     assert health["status"] == "ok"
+

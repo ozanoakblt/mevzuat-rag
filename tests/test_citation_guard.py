@@ -12,8 +12,8 @@ from src.generation.citation_guard import (
 )
 
 CHUNKS = [
-    {"text": "OSB'ler TEİAŞ'a başvurur ve bu Yönetmelik ile Elektrik Şebeke Yönetmeliğine göre incelenir.", "rerank_score": 2.5},
-    {"text": "Anlaşma gücü TEİAŞ tarafından belirlenir.", "rerank_score": 1.2},
+    {"text": "OSB'ler TEÄ°AÅ'a baÅŸvurur ve bu YÃ¶netmelik ile Elektrik Åebeke YÃ¶netmeliÄŸine gÃ¶re incelenir.", "rerank_score": 2.5},
+    {"text": "AnlaÅŸma gÃ¼cÃ¼ TEÄ°AÅ tarafÄ±ndan belirlenir.", "rerank_score": 1.2},
 ]
 
 
@@ -39,81 +39,81 @@ def test_check_confidence_low_when_no_scores_present():
 def test_extract_citation_quotes_parses_format():
     answer = '''Cevap metni [1].
 
-Kaynak Alıntıları:
-[1]: "OSB'ler TEİAŞ'a başvurur"
-[2]: "Anlaşma gücü TEİAŞ tarafından belirlenir"
+Kaynak AlÄ±ntÄ±larÄ±:
+[1]: "OSB'ler TEÄ°AÅ'a baÅŸvurur"
+[2]: "AnlaÅŸma gÃ¼cÃ¼ TEÄ°AÅ tarafÄ±ndan belirlenir"
 '''
     quotes = extract_citation_quotes(answer)
-    assert quotes[1] == "OSB'ler TEİAŞ'a başvurur"
-    assert quotes[2] == "Anlaşma gücü TEİAŞ tarafından belirlenir"
+    assert quotes[1] == "OSB'ler TEÄ°AÅ'a baÅŸvurur"
+    assert quotes[2] == "AnlaÅŸma gÃ¼cÃ¼ TEÄ°AÅ tarafÄ±ndan belirlenir"
 
 
 def test_verify_citations_grounded_quote_passes():
-    answer = 'Kaynak Alıntıları:\n[1]: "OSB\'ler TEİAŞ\'a başvurur"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "OSB\'ler TEÄ°AÅ\'a baÅŸvurur"'
     checks = verify_citations(answer, CHUNKS)
     assert len(checks) == 1
     assert checks[0].grounded is True
 
 
 def test_verify_citations_fabricated_quote_flagged():
-    answer = 'Kaynak Alıntıları:\n[1]: "bu cümle kaynakta yok ve uydurulmuş"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "bu cÃ¼mle kaynakta yok ve uydurulmuÅŸ"'
     checks = verify_citations(answer, CHUNKS)
     assert checks[0].grounded is False
 
 
 def test_verify_citations_out_of_range_citation_flagged():
-    answer = 'Kaynak Alıntıları:\n[5]: "olmayan referans"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[5]: "olmayan referans"'
     checks = verify_citations(answer, CHUNKS)
     assert checks[0].grounded is False
 
 
 def test_verify_citations_case_and_whitespace_insensitive():
-    answer = 'Kaynak Alıntıları:\n[1]: "OSB\'LER   TEİAŞ\'a   başvurur"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "OSB\'LER   TEÄ°AÅ\'a   baÅŸvurur"'
     checks = verify_citations(answer, CHUNKS)
     assert checks[0].grounded is True
 
 
 def test_verify_citations_survives_pdf_kerning_artifact():
     """
-    Gerçek bir vakadan: kaynak PDF'te "işletilmesi" kelimesi font kerning
-    yüzünden "işletil mesi" olarak çıkarılmıştı (Faz 2'deki "MA DDE"
-    hatasıyla aynı kategoriden). Model doğru yazımla alıntı yapınca eski
-    kod bunu yanlışlıkla "doğrulanamadı" işaretliyordu — artık işaretlememeli.
+    GerÃ§ek bir vakadan: kaynak PDF'te "iÅŸletilmesi" kelimesi font kerning
+    yÃ¼zÃ¼nden "iÅŸletil mesi" olarak Ã§Ä±karÄ±lmÄ±ÅŸtÄ± (Faz 2'deki "MA DDE"
+    hatasÄ±yla aynÄ± kategoriden). Model doÄŸru yazÄ±mla alÄ±ntÄ± yapÄ±nca eski
+    kod bunu yanlÄ±ÅŸlÄ±kla "doÄŸrulanamadÄ±" iÅŸaretliyordu â€” artÄ±k iÅŸaretlememeli.
     """
     kerning_chunks = [
         {
-            "text": "sayaçlarının kurulumu, işletil mesi ve bakımı dağıtım şirketi tarafından yapılır.",
+            "text": "sayaÃ§larÄ±nÄ±n kurulumu, iÅŸletil mesi ve bakÄ±mÄ± daÄŸÄ±tÄ±m ÅŸirketi tarafÄ±ndan yapÄ±lÄ±r.",
             "rerank_score": 1.0,
         }
     ]
-    answer = 'Kaynak Alıntıları:\n[1]: "sayaçlarının kurulumu, işletilmesi ve bakımı dağıtım şirketi tarafından yapılır."'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "sayaÃ§larÄ±nÄ±n kurulumu, iÅŸletilmesi ve bakÄ±mÄ± daÄŸÄ±tÄ±m ÅŸirketi tarafÄ±ndan yapÄ±lÄ±r."'
     checks = verify_citations(answer, kerning_chunks)
     assert checks[0].grounded is True
 
 
 def test_run_guard_combines_both_checks():
-    answer = 'Kaynak Alıntıları:\n[1]: "OSB\'ler TEİAŞ\'a başvurur"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "OSB\'ler TEÄ°AÅ\'a baÅŸvurur"'
     result = run_guard(answer, CHUNKS)
     assert result.is_low_confidence is False
     assert result.has_ungrounded_citations is False
 
 
 def test_format_guard_warnings_empty_when_all_good():
-    answer = 'Kaynak Alıntıları:\n[1]: "OSB\'ler TEİAŞ\'a başvurur"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "OSB\'ler TEÄ°AÅ\'a baÅŸvurur"'
     result = run_guard(answer, CHUNKS)
     assert format_guard_warnings(result) == ""
 
 
 def test_format_guard_warnings_flags_low_confidence():
     low_chunks = [{"text": "x", "rerank_score": -3.1}]
-    result = run_guard("Kaynak Alıntıları:\n[1]: \"x\"", low_chunks)
+    result = run_guard("Kaynak AlÄ±ntÄ±larÄ±:\n[1]: \"x\"", low_chunks)
     warnings = format_guard_warnings(result)
-    assert "DÜŞÜK GÜVEN" in warnings
+    assert "DUSUK GUVEN" in warnings
 
 
 def test_format_guard_warnings_flags_ungrounded_citation():
-    answer = 'Kaynak Alıntıları:\n[1]: "uydurulmuş bir alıntı"'
+    answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "uydurulmuÅŸ bir alÄ±ntÄ±"'
     result = run_guard(answer, CHUNKS)
     warnings = format_guard_warnings(result)
-    assert "DOĞRULANAMAYAN ALINTI" in warnings
+    assert "DOGRULANAMAYAN ALINTI" in warnings
     assert "[1]" in warnings

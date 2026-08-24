@@ -53,7 +53,12 @@ class Reranker:
         return scored[:top_k]
 
     def rerank_with_safety_net(
-        self, query: str, candidates: list[dict], top_k: int = 5, guard_top_n: int = 3
+        self,
+        query: str,
+        candidates: list[dict],
+        top_k: int = 5,
+        guard_top_n: int = 3,
+        guard_pool: list[dict] | None = None,
     ) -> list[dict]:
         """
         rerank()'in aynısı, tek farkla: hybrid'in en güçlü ilk `guard_top_n`
@@ -81,23 +86,40 @@ class Reranker:
         if not candidates:
             return reranked
 
-        guard_pool = candidates[:guard_top_n]
+        guard_pool = guard_pool if guard_pool is not None else candidates[:guard_top_n]
         reranked_ids = {r["chunk_id"] for r in reranked}
         missing = [c for c in guard_pool if c["chunk_id"] not in reranked_ids]
         if not missing or not reranked:
             return reranked
 
-        # En zayıf reranker sonuçlarından başlayarak, en güçlü kurtarılanı
-        # önce yerleştir. len(missing) > len(reranked) olursa taşanlar
-        # atlanır (top_k sınırı korunur).
+        # Oncelik-tabanli kurtarma: guard_pool sirasi = onem sirasi (once
+        # eklenen = daha onemli). Her "missing" oge, mevcut reranked
+        # listesindeki EN DUSUK oncelikli (guard_pool'da yok = sonsuz
+        # dusuk, ya da guard_pool'da daha gec siradaki) slotu, KENDI
+        # onceliginden daha kotu ise ezer. Boylece yuksek oncelikli bir
+        # sonuc (or. hybrid'in 1 numarasi), guard havuzu buyuk oldugunda
+        # bile asla dusuk oncelikli baska bir guard uyesi tarafindan
+        # yanlislikla silinmez (gercek vakada tespit edilen hata buydu).
+        priority = {c["chunk_id"]: i for i, c in enumerate(guard_pool)}
+        base_score = min(r["rerank_score"] for r in reranked)
+
         for i, rescue in enumerate(missing):
-            if i >= len(reranked):
-                break
-            idx_to_replace = len(reranked) - 1 - i
-            base_score = min(r["rerank_score"] for r in reranked)
-            reranked[idx_to_replace] = {
+            rescue_priority = priority[rescue["chunk_id"]]
+            worst_idx = None
+            worst_priority = -1
+            for idx2, r in enumerate(reranked):
+                p2 = priority.get(r["chunk_id"], float("inf"))
+                if worst_idx is None or p2 > worst_priority or (
+                    p2 == worst_priority
+                    and r["rerank_score"] < reranked[worst_idx]["rerank_score"]
+                ):
+                    worst_idx = idx2
+                    worst_priority = p2
+            if worst_idx is None or worst_priority <= rescue_priority:
+                continue
+            reranked[worst_idx] = {
                 **rescue,
-                "rerank_score": base_score - i * 1e-6,  # sıralamada teklik için ihmal edilebilir fark
+                "rerank_score": base_score - (i + 1) * 1e-6,
                 "rescued_by_safety_net": True,
             }
 

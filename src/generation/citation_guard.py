@@ -96,28 +96,29 @@ def verify_citations(answer_text: str, chunks: list[dict]) -> list[CitationCheck
 def run_guard(answer_text: str, chunks: list[dict]) -> GuardResult:
     is_low_confidence, best_score = check_confidence(chunks)
     citation_checks = verify_citations(answer_text, chunks)
+    has_ungrounded = any(not c.grounded for c in citation_checks)
     return GuardResult(
-        is_low_confidence=is_low_confidence,
+        is_low_confidence=is_low_confidence or has_ungrounded,
         best_rerank_score=best_score,
         citation_checks=citation_checks,
     )
 
 
 def format_guard_warnings(result: GuardResult) -> str:
-    """Kullanıcıya gösterilecek uyarı metnini üretir (varsa)."""
+    """Kullaniciya gosterilecek uyari metnini uretir (varsa)."""
     warnings = []
     if result.is_low_confidence:
         warnings.append(
-            "⚠️  DÜŞÜK GÜVEN: Bulunan kaynaklar bu soruyla zayıf ilişkili "
-            "görünüyor. Bu cevabı temkinli değerlendirin, resmî metni "
+            "UYARI - DUSUK GUVEN: Bulunan kaynaklar bu soruyla zayif iliskili "
+            "gorunuyor. Bu cevabi temkinli degerlendirin, resmi metni "
             "mutlaka kontrol edin."
         )
     ungrounded = [c for c in result.citation_checks if not c.grounded]
     if ungrounded:
         nums = ", ".join(f"[{c.citation_num}]" for c in ungrounded)
         warnings.append(
-            f"⚠️  DOĞRULANAMAYAN ALINTI: {nums} numaralı referans(lar)ın "
-            "alıntısı, gösterilen kaynak pasajda birebir bulunamadı. Bu "
-            "kısımları özellikle resmî metinle karşılaştırın."
+            f"UYARI - DOGRULANAMAYAN ALINTI: {nums} numarali referans(lar)in "
+            "alintisi, gosterilen kaynak pasajda birebir bulunamadi. Bu "
+            "kismi ozellikle resmi metinle karsilastirin."
         )
     return "\n".join(warnings)
