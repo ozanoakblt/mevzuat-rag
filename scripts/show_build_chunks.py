@@ -1,0 +1,5 @@
+﻿text = open("src/parsing/metadata.py", encoding="utf-8").read()
+idx1 = text.find("def build_chunks")
+idx2 = text.find("def parse_and_save")
+print("=== build_chunks (ilk 100 satir) ===")
+print("\n".join(text[idx1:idx2].split(chr(10))[:100]))

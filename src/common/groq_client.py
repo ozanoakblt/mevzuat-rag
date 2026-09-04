@@ -98,7 +98,7 @@ def chat_completion_json(
         temperature,
         timeout,
         max_retries,
-        max_tokens=200,
+        max_tokens=350,
         json_mode=True,
         # gpt-oss gibi "reasoning" modelleri kısa sınıflandırma görevinde
         # gereksiz yere uzun düşünüp token/hız limitini tüketebilir.

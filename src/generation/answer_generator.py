@@ -101,6 +101,19 @@ KURALLAR (bunlara istisnasız uy):
     esit agirlikli madde) - YANLIS yaklasim: "digerleri X uygular, ancak
     C durumunda Y gecerlidir" (sanki C, digerlerinin istisnasiymis gibi
     sunmak, kaynak metinde boyle yazmiyorsa).
+15. KURUM ADLARINI KESINLIKLE KARISTIRMA: Turkiye elektrik sektorunde
+    TEIAS (iletim sistemi isletmecisi, tek ve devlete ait), dagitim
+    sirketleri (bolgesel, cok sayida, genelde ozel sektor), EPDK
+    (duzenleyici kurum), gorevli tedarik sirketi ve tedarik sirketleri
+    BIRBIRINDEN TAMAMEN FARKLI, AYRI tuzel kisilerdir. Kaynak pasajda
+    "TEIAS" geciyorsa cevabinda "dagitim sirketi" ile ESITLEME veya
+    "dagitim sirketi (TEIAS)" gibi parantezli birlestirme YAPMA - bu
+    ciddi bir dogruluk hatasidir. Eger soru dagitim sirketleri hakkindaysa
+    ama kaynak pasaj sadece TEIAS'tan bahsediyorsa, bunu ACIKCA belirt:
+    "Kaynakta bu yetki TEIAS'a atfediliyor, dagitim sirketleri icin ayni
+    yetkinin var olup olmadigi bu pasajlarda belirtilmiyor" gibi. Kurum
+    adlarini birbirinin yerine KULLANMA, birbirinin ESANLAMLISI GIBI
+    sunma, ya da biri hakkindaki bilgiyi digerine GENELLEME.
 
 Cevabını Türkçe, net ve öz yaz."""
 

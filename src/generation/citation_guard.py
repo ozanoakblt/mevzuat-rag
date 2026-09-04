@@ -145,12 +145,42 @@ def verify_citations(answer_text: str, chunks: list[dict]) -> list[CitationCheck
     return checks
 
 
+import re as _re
+
+_INSTITUTION_CONFLATION_RE = _re.compile(
+    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\s*\((dağıtım\s+şirket\w*|TEİAŞ|EPDK)\)",
+    _re.IGNORECASE,
+)
+
+
+def detect_institution_conflation(answer_text: str) -> bool:
+    """
+    Modelin farkli kurumlari (TEIAS, dagitim sirketi, EPDK) birbirinin
+    esanlamlisi gibi sunmasini tespit eder - ornegin "dagitim sirketi
+    (TEIAS)" gibi bir ifade, bu iki AYRI tuzel kisiyi yanlislikla
+    esitleme anlamina gelir (gercek bir vakada tespit edildi: model
+    "Dagitim sirketinin (TEIAS) SCADA sistemi..." diye yazmisti, oysa
+    kaynak metin sadece TEIAS'tan bahsediyordu, dagitim sirketinden
+    hic bahsetmiyordu). Prompt kurali (kural 15) bunu her zaman
+    onleyemedigi icin, kod seviyesinde ek bir guvenlik agi olarak
+    eklendi - tespit edilirse otomatik dusuk guven tetiklenir.
+    """
+    for m in _INSTITUTION_CONFLATION_RE.finditer(answer_text):
+        a, b = m.group(1).lower(), m.group(2).lower()
+        a_norm = "dagitim" if "dağıtım" in a else a
+        b_norm = "dagitim" if "dağıtım" in b else b
+        if a_norm != b_norm:
+            return True
+    return False
+
+
 def run_guard(answer_text: str, chunks: list[dict]) -> GuardResult:
     is_low_confidence, best_score = check_confidence(chunks)
     citation_checks = verify_citations(answer_text, chunks)
     has_ungrounded = any(not c.grounded for c in citation_checks)
+    has_conflation = detect_institution_conflation(answer_text)
     return GuardResult(
-        is_low_confidence=is_low_confidence or has_ungrounded,
+        is_low_confidence=is_low_confidence or has_ungrounded or has_conflation,
         best_rerank_score=best_score,
         citation_checks=citation_checks,
     )

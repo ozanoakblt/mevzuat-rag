@@ -33,7 +33,7 @@ def expand_query(question: str, max_queries: int = 3) -> list[str]:
     eski (expansion'siz) davranisa geri dusmeli.
     """
     try:
-        result = chat_completion_json(EXPANSION_SYSTEM_PROMPT, question)
+        result = chat_completion_json(EXPANSION_SYSTEM_PROMPT, question, temperature=0.0)
         queries = result.get("queries", [])
         queries = [q.strip() for q in queries if isinstance(q, str) and q.strip()]
         if not queries:
