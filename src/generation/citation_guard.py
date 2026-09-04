@@ -148,7 +148,9 @@ def verify_citations(answer_text: str, chunks: list[dict]) -> list[CitationCheck
 import re as _re
 
 _INSTITUTION_CONFLATION_RE = _re.compile(
-    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\s*\((dağıtım\s+şirket\w*|TEİAŞ|EPDK)\)",
+    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\s*"
+    r"\((?:örneğin|ör\.?|yani|diğer\s+bir\s+deyişle|misal)?\s*"
+    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\)",
     _re.IGNORECASE,
 )
 

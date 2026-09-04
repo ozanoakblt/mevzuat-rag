@@ -113,6 +113,7 @@ pytest tests/ -v
 ```
 
 ## Bilinen sınırlar
+- Coklu-kurum (TEIAS / dagitim sirketi / EPDK gibi) icerikli sorularda, model bazen farkli kurumlari birbirinin esanlamlisi gibi sunabiliyor (orn. "dagitim sirketi (TEIAS)"). Kod seviyesinde bir tespit mekanizmasi (detect_institution_conflation) bu durumlarda otomatik dusuk guven tetikliyor, ama icerik yine de dikkatli okunmali - ozellikle teknik/operasyonel (SCADA, set-point, PPC gibi) konularda.
 - `src/ingestion/sources.py` içindeki sabit URL listesi kullanılır
   (otomatik mevzuat keşfi yok).
 - 4 kaynaktan 2'si (EPDK listeleme sayfası ve bilgi sayfaları) otomatik
