@@ -132,7 +132,7 @@ def ask(req: AskRequest) -> AskResponse:
             cid = r["chunk_id"]
             if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
                 candidates_by_id[cid] = r
-            if i < 5 and cid not in guard_ids:
+            if i < 8 and cid not in guard_ids:
                 guard_ids.append(cid)
     candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
     guard_pool = [candidates_by_id[cid] for cid in guard_ids]
