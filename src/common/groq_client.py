@@ -118,6 +118,7 @@ def chat_completion_text(
     timeout: float = 60.0,
     max_retries: int = 4,
     max_tokens: int = 1000,
+    reasoning_effort: str | None = None,
 ) -> str:
     """Serbest metin üretimi için (Faz 8: cevap üretme). Ham metin döner."""
     return _request(
@@ -131,7 +132,7 @@ def chat_completion_text(
         json_mode=False,
         # Cevap üretimi daha fazla akıl yürütme gerektirebilir; "low" yerine
         # varsayılanı (None -> API'nin kendi varsayılanı) kullanıyoruz.
-        reasoning_effort=None,
+        reasoning_effort=reasoning_effort,
     )
 
 

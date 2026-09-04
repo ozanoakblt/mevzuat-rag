@@ -1,4 +1,4 @@
-const stageEl = document.querySelector(".stage");
+﻿new_js = r"""const stageEl = document.querySelector(".stage");
 const qaScrollEl = document.getElementById("qaScroll");
 const formEl = document.getElementById("askForm");
 const inputEl = document.getElementById("questionInput");
@@ -295,3 +295,8 @@ function renderAnswer(block, question, data) {
     </div>
   `;
 }
+"""
+
+with open("web/static/app.js", "w", encoding="utf-8") as f:
+    f.write(new_js)
+print("app.js tamamen yeniden yazildi, uzunluk:", len(new_js))

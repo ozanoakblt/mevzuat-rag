@@ -72,6 +72,35 @@ KURALLAR (bunlara istisnasız uy):
    bağlayıcı olmadığını belirt.
 10. Cevabının gövdesinde (Kaynak Alıntıları bölümü hariç), kullanıcıya
     kesinlik gerektiren durumlarda resmî metni kontrol etmesini hatırlat.
+11. ZORUNLU TARAMA: Cevabı yazmadan once, sana verilen TUM kaynak
+    pasajlari (1'den son numaraya kadar HEPSI) tek tek gozden gecir.
+    Soruyla dogrudan ilgili olan HER pasaji cevabina dahil et - sadece
+    ilk gordugun veya en belirgin olan 1-2 pasajla yetinme.
+12. TEK PASAJ ICINDEKI COKLU FAKTLAR: Bir kaynak pasaj TEK CUMLEDE
+    birden fazla ayri bilgi iceriyorsa (ornegin hem "adet" hem "guc/kVA"
+    hem "kosul" ayni cumlede geciyorsa), bu bilgilerin HEPSINI ayri ayri
+    cevabina yansit - pasaji kullanip da icindeki ikinci/ucuncu bir
+    sayisal degeri veya sarti atlaman kabul edilemez bir eksikliktir.
+    Ornek: kaynak "X en az bir adet Y bulundurmalidir, bunlarin her biri
+    en az Z gucunde olmalidir" diyorsa, cevabinda hem "en az bir adet"
+    hem "en az Z gucunde" ikisi de ayri ayri yer almali - sadece adet
+    bilgisini verip guc bilgisini atlama.
+13. Cevabini tamamladiktan sonra, kullandigin her kaynak pasajin
+    icindeki TUM sayisal deger ve kosullari (adet, sure, tutar, yuzde,
+    guc, mesafe vb.) cevabina ekleyip eklemedigini tekrar kontrol et.
+14. ONEMLI AYRIM (11-13 ile 5b-5c CELISMEZ): Kural 11-13, bir pasaji
+    ATLAMAMANI ister - bu, o pasajlari birbirine BAGIMLI ya da IC ICE
+    gostermen gerektigi anlamina GELMEZ. Farkli kaynak pasajlar farkli,
+    BAGIMSIZ senaryolari (kosullari) anlatiyorsa, bunlari cevabinda AYRI
+    AYRI, birbirinden BAGIMSIZ maddeler olarak listele. "Bu sinir su
+    kosulda gecerlidir, aksi halde diger kosul uygulanir" gibi zincirleme
+    bir bagimlilik kurma - sadece kaynak metinde ACIKCA boyle bir
+    bagimlilik ifadesi (orn. "asagidaki durum haric", "bu sinirin
+    asilmasi halinde") varsa boyle bir bag kur. Ornek DOGRU yaklasim: "A
+    durumu icin X, B durumu icin Y, C durumu icin Z gecerlidir" (uc ayri,
+    esit agirlikli madde) - YANLIS yaklasim: "digerleri X uygular, ancak
+    C durumunda Y gecerlidir" (sanki C, digerlerinin istisnasiymis gibi
+    sunmak, kaynak metinde boyle yazmiyorsa).
 
 Cevabını Türkçe, net ve öz yaz."""
 
@@ -98,7 +127,7 @@ def generate_answer(
     chunks: list[dict],
     doc_titles: dict[str, str] | None = None,
     model: str | None = None,
-    max_tokens: int = 1800,
+    max_tokens: int = 3200,
 ) -> str:
     """
     chunks: retrieval pipeline'dan gelen (rerank edilmiş) sonuçlar, her biri
@@ -116,5 +145,5 @@ def generate_answer(
     context = _format_context(chunks, doc_titles)
     user_prompt = f"KAYNAK PASAJLAR:\n\n{context}\n\nSORU: {query}"
 
-    return chat_completion_text(SYSTEM_PROMPT, user_prompt, model=model, max_tokens=max_tokens)
+    return chat_completion_text(SYSTEM_PROMPT, user_prompt, model=model, max_tokens=max_tokens, temperature=0.0, reasoning_effort="low")
 

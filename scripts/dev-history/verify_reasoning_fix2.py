@@ -1,0 +1,5 @@
+﻿text1 = open("src/generation/answer_generator.py", encoding="utf-8").read()
+text2 = open("src/common/groq_client.py", encoding="utf-8").read()
+print("answer_generator reasoning_effort=low:", "reasoning_effort=" + chr(34) + "low" + chr(34) in text1)
+print("groq_client parametre var:", "reasoning_effort: str | None = None," in text2)
+print("groq_client _request cagrisi:", "reasoning_effort=reasoning_effort," in text2)

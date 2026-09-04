@@ -1,0 +1,7 @@
+﻿text = open("src/ingestion/sources.py", encoding="utf-8").read()
+print("kanun-5346:", "kanun-5346" in text)
+print("kanun-4628:", "kanun-4628" in text)
+print("yonetmelik-ithalat-ihracat:", "yonetmelik-ithalat-ihracat" in text)
+print("yonetmelik-yan-hizmetler:", "yonetmelik-yan-hizmetler" in text)
+print("yonetmelik-dengeleme-uzlastirma:", "yonetmelik-dengeleme-uzlastirma" in text)
+print("toplam doc_id sayisi:", text.count("doc_id="))

@@ -140,7 +140,18 @@ def ask(req: AskRequest) -> AskResponse:
         question, candidates, top_k=FINAL_TOP_K, guard_pool=guard_pool
     )
 
-    answer = generate_answer(question, top_chunks, doc_titles=DOC_TITLES)
+    try:
+        answer = generate_answer(question, top_chunks, doc_titles=DOC_TITLES)
+    except Exception as exc:
+        import traceback
+        error_detail = traceback.format_exc()
+        with open("last_error.log", "w", encoding="utf-8") as f:
+            f.write(error_detail)
+        print("=" * 60)
+        print("GENERATE_ANSWER HATASI:")
+        print(error_detail)
+        print("=" * 60)
+        raise
     guard = run_guard(answer, top_chunks)
 
     sources = [

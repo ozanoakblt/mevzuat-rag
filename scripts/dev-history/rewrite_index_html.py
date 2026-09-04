@@ -1,4 +1,4 @@
-<!doctype html>
+﻿new_html = """<!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8" />
@@ -76,10 +76,7 @@
 
   <aside class="source-panel" id="sourcePanel">
     <div class="source-panel-header">
-      <div class="source-panel-title-row">
-        <span class="source-panel-led" id="sourcePanelLed" hidden></span>
-        <span class="source-panel-title">Kaynakca</span>
-      </div>
+      <span class="source-panel-title">Kaynakca</span>
       <span class="source-panel-count" id="sourcePanelCount"></span>
     </div>
     <div class="source-panel-body" id="sourcePanelBody">
@@ -93,3 +90,8 @@
 <script src="/static/app.js"></script>
 </body>
 </html>
+"""
+
+with open("web/static/index.html", "w", encoding="utf-8") as f:
+    f.write(new_html)
+print("index.html yazildi, uzunluk:", len(new_html))

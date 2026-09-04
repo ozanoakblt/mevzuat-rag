@@ -1,0 +1,7 @@
+﻿text = open("web/static/app.js", encoding="utf-8").read()
+print("data-cite (A):", "data-cite" in text)
+print("currentBlockEl tanimi (B):", "let currentBlockEl" in text)
+print("resetSourcePanel genisletilmis (C):", "showSourcePanelSkeleton" in text)
+print("cite click/hover (D):", "mouseover" in text)
+print("showSourcePanelSkeleton cagrisi (E):", text.count("showSourcePanelSkeleton()"))
+print("renderSourcePanel(data.sources, block, isLow) (F):", "renderSourcePanel(data.sources, block, isLow)" in text)
