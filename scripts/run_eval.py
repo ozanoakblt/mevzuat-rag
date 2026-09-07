@@ -36,6 +36,7 @@ from src.generation.citation_guard import LOW_CONFIDENCE_RERANK_THRESHOLD, run_g
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.hybrid import hybrid_search
+from src.retrieval.query_expansion import expand_query
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,8 +45,8 @@ VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
 EVAL_SET_PATH = ROOT / "eval" / "eval_set.json"
 RESULTS_PATH = ROOT / "eval" / "results.json"
 
-CANDIDATE_POOL_SIZE = 20
-FINAL_TOP_K = 5
+CANDIDATE_POOL_SIZE = 30
+FINAL_TOP_K = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 
 
@@ -70,10 +71,48 @@ def _check_recall(reranked: list[dict], question: dict) -> bool:
 def run_single_question(
     question: dict, embedder, vector_store, bm25_index, reranker, with_generation: bool
 ) -> dict:
-    candidates = hybrid_search(
-        question["question"], embedder, vector_store, bm25_index, top_k=CANDIDATE_POOL_SIZE
+    q_text = question["question"]
+    sub_queries = expand_query(q_text)
+    candidates_by_id: dict[str, dict] = {}
+    per_query_results: list[list[dict]] = []
+    for sq in sub_queries:
+        sq_results = hybrid_search(sq, embedder, vector_store, bm25_index, top_k=CANDIDATE_POOL_SIZE)
+        per_query_results.append(sq_results)
+        for r in sq_results:
+            cid = r["chunk_id"]
+            if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
+                candidates_by_id[cid] = r
+
+    guard_ids: list[str] = []
+    max_len = max((len(r) for r in per_query_results), default=0)
+    for i in range(min(max_len, 13)):
+        for sq_results in per_query_results:
+            if i < len(sq_results):
+                cid = sq_results[i]["chunk_id"]
+                if cid not in guard_ids:
+                    guard_ids.append(cid)
+    candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
+    guard_pool = [candidates_by_id[cid] for cid in guard_ids]
+    reranked = reranker.rerank_with_safety_net(
+        q_text, candidates, top_k=FINAL_TOP_K, guard_pool=guard_pool
     )
-    reranked = reranker.rerank_with_safety_net(question["question"], candidates, top_k=FINAL_TOP_K)
+
+    existing_ids = {c["chunk_id"] for c in reranked}
+    ek_keys_selected = {
+        (c["doc_id"], c["madde_no"]) for c in reranked if c.get("madde_kind") == "EK"
+    }
+    if ek_keys_selected:
+        extra_ek_chunks = [
+            c for c in candidates
+            if c.get("madde_kind") == "EK"
+            and (c["doc_id"], c["madde_no"]) in ek_keys_selected
+            and c["chunk_id"] not in existing_ids
+        ]
+        if extra_ek_chunks:
+            for c in extra_ek_chunks:
+                c.setdefault("rerank_score", 0.0)
+            reranked = reranked + extra_ek_chunks
+            existing_ids.update(c["chunk_id"] for c in extra_ek_chunks)
 
     is_negative_test = not question["expected_documents"]
     best_score = max((c["rerank_score"] for c in reranked), default=None)
@@ -94,7 +133,7 @@ def run_single_question(
         result["recall_hit"] = _check_recall(reranked, question)
 
     if with_generation:
-        answer = generate_answer(question["question"], reranked, doc_titles=DOC_TITLES)
+        answer = generate_answer(q_text, reranked, doc_titles=DOC_TITLES)
         guard = run_guard(answer, reranked)
         result["guard_low_confidence"] = guard.is_low_confidence
         result["ungrounded_citation_count"] = sum(
