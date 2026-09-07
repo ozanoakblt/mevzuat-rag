@@ -1,0 +1,106 @@
+{
+  "_schema_note": "Her soru: question, expected_documents (doc_id listesi), expected_articles ('<KIND> <NO>' formatında, KIND: MADDE/GEÇİCİ MADDE/EK MADDE), difficulty (kolay/orta/zor), scenario_tag (src/tagging/scenario_taxonomy.py'deki id veya null). 'zor' zorluktaki bazı sorular BİLEREK zayıf kapsanan konulardan seçildi (ör. sayaç arızası) — burada beklenen 'iyi bir cevap' değil, 'sistemin dürüstçe zayıf/belirsiz olduğunu belirtmesi'dir (bkz. notes alanı). Brief madde 10'daki 'query intent tipleri' bölümü orijinal belgede resim olarak verilmiş, metne dökülmemişti; bu yüzden intent_type alanı eklenmedi, sadece scenario_tag ve difficulty kullanıldı.",
+  "questions": [
+    {
+      "id": "q06",
+      "question": "OSB katılımcılarının sisteme bağlantısı Bağlantı ve Sistem Kullanım Yönetmeliği kapsamında mıdır?",
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": "osb_baglantisi",
+      "notes": "Kritik istisna testi: doğru cevap 'HAYIR, kapsam DIŞINDA, ayrı OSB yönetmeliğine tabi' olmalı. Faz 8'de bu soruda yanlış çerçeveleme (kapsamda gibi gösterme) hatası yakalanmış, Faz 9'da düzeltilmişti."
+    },
+    {
+      "id": "q23",
+      "question": "Sayaç arızası durumunda kullanıcı ne yapmalı, hangi süreç işler?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": "sayac_arizasi",
+      "notes": "KASITLI ZAYIF KAPSAMA TESTİ: elimizdeki 4 belgede 'sayaç arızası' için özel bir prosedür maddesi yok (sadece genel sayaç bakım/mülkiyet hükümleri var). Beklenen davranış: sistem düşük güven uyarısı vermeli, kesin bir prosedür varmış gibi davranmamalı. expected_documents/articles bilerek boş bırakıldı."
+    },
+    {
+      "id": "q24",
+      "question": "Akıllı sayaçların siber güvenlik standartları ve veri şifreleme gereksinimleri nelerdir?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "DÜZELTME (bkz. eski q24 notu): orijinal CBS sorusu yanlış varsayıma dayanıyordu (Madde 13/7'de CBS'e gerçek atıf var, sistem onu doğru buluyordu). Yeni soru daha güvenli bir kapsam-dışı test: siber güvenlik/şifreleme, sayaç konusuna yakın (plausible-adjacent) ama elimizdeki 4 belgede hiç değinilmeyen bir teknik alan."
+    },
+    {
+      "id": "q25",
+      "question": "Topraklama ve izolasyon uygunluğuna ilişkin teknik şartlar bu belgelerde nasıl düzenleniyor?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": "topraklama_izolasyon",
+      "notes": "KASITLI KAPSAM DIŞI TEST: topraklama/izolasyon teknik standartları ayrı bir mevzuatta (örn. Elektrik Tesislerinde Topraklamalar Yönetmeliği), bizim 4 belgede kapsam dışı. Sistem uydurmamalı."
+    },
+    {
+      "id": "q29",
+      "question": "Teknik olmayan kayıp (kaçak kullanım) maliyetleri tarifelere nasıl yansıtılır?",
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 17"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": "kayip_kacak",
+      "notes": "Madde 17 içinde spesifik bir bent'te geçiyor, chunk-seviyesi hassasiyet testi."
+    },
+    {
+      "id": "q32",
+      "question": "27.01.2026 tarihli değişiklikle Bağlantı ve Sistem Kullanım Yönetmeliğinin Dağıtım varlıkları maddesinde ne değişti?",
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 21"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "DÜZELTME: orijinal soru 'Madde 20'yi hedefliyordu ama bu maddede 27.01.2026 tarihli hiçbir değişiklik yok (eval çalıştırıldığında ortaya çıktı, kontrol edilmeden yazılmıştı — CBS/q24 vakasıyla aynı kategoriden bir hata). amendment_refs verisi kontrol edilerek gerçekten bu tarihte değişen bir madde (21) ile değiştirildi."
+    },
+    {
+      "id": "q33",
+      "question": "25.06.2026 tarihli değişiklik hangi maddeyi güncelliyor ve bu değişiklik geri ödemeye esas yatırım tutarının güncellenmesiyle mi ilgili?",
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-06-25-degisiklik"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "İki belge parçasının (tam metin + değişiklik) doğru ayrıştırılıp ayrıştırılmadığını test eder — related_documents bağlantısı burada devreye girmeli."
+    },
+    {
+      "id": "q48",
+      "question": "Teknik kalite ölçüm sonuçları Kuruma nasıl sunulur?",
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 24"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": "gerilim_kalitesi",
+      "notes": null
+    },
+    {
+      "id": "q49",
+      "question": "Elektrikli araç şarj istasyonu işletmecisinin araç park ihlali cezalarından sorumluluğu nedir?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "GENELLEME NEGATİF TESTİ: park cezaları/trafik ihlalleri elimizdeki 4 belgenin tamamen dışında bir konu. ÖNEMLİ BULGU: run_eval.py'nin basit 'rerank skoru < 0' ölçütü bunu YANLIŞ ALARM olarak işaretledi (skor +2.04, çünkü sorgu 'elektrikli araç şarj istasyonu işletmecisi' gibi EK MADDE 5'te gerçekten geçen güçlü terimler içeriyor — retrieval haklı olarak konusal olarak alakalı bir pasaj buldu). Ama python scripts/answer.py ile tam pipeline (generation + citation_guard) çalıştırıldığında sistem doğru şekilde 'Verilen kaynaklarda bu konuda yeterli bilgi bulamadım' dedi — UYDURMADI. Bu, retrieval güveninin (konusal alaka) generation'ın gerçek cevap verip vermediğinden (spesifik soru) FARKLI bir şey olduğunu kanıtlıyor. run_eval.py'nin negative-test ölçütü sadece retrieval-confidence kullandığı için burada yanlış alarm verdi; --with-generation ile çalıştırılırsa doğru sonucu (başarılı) verir."
+    }
+  ]
+}
