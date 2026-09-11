@@ -117,7 +117,7 @@ def ask(req: AskRequest) -> AskResponse:
             detail="Vektör index boş. Önce scripts/build_index.py çalıştırın.",
         )
 
-    sub_queries = expand_query(question)
+    sub_queries = expand_query(question, embedder=_state["embedder"])
     candidates_by_id: dict[str, dict] = {}
     per_query_results: list[list[dict]] = []
     for sq in sub_queries:

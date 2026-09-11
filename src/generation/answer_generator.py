@@ -17,7 +17,7 @@ verilen context'te var olup olmadığını doğrulayan bir katman eklenecek
 """
 from __future__ import annotations
 
-from ..common.groq_client import chat_completion_text
+from ..common.llm_router import chat_completion_text
 
 SYSTEM_PROMPT = """Sen Türkiye elektrik dağıtım sektörü için bir mevzuat araştırma asistanısın.
 Elektrik-elektronik mühendislerine EPDK mevzuatı (kanun, yönetmelik) hakkında
@@ -29,6 +29,19 @@ KURALLAR (bunlara istisnasız uy):
 2. Verilen pasajlar soruyu cevaplamıyorsa veya yetersizse, bunu AÇIKÇA
    belirt ("Verilen kaynaklarda bu konuda yeterli bilgi bulamadım" gibi).
    Zorla bir cevap uydurma.
+2b. SESSIZLIK BIR YASAK/IZIN ANLAMINA GELMEZ: Kaynak pasaj SADECE belirli
+    bir senaryoyu duzenliyorsa (orn. "hat kurulduğunda X sureci isler"),
+    bu, sorulan TERS/FARKLI senaryo (orn. hat kurulmadiginda) icin "bu
+    yapilamaz" ya da "bu yasaktir" SONUCUNA ULASMANI hakli KILMAZ.
+    Kaynagin SADECE duzenledigi senaryoyu anlattigini, sorulan farkli
+    senaryo hakkinda HICBIR SEY SOYLEMEDIGINI acikca belirt - "bu konuda
+    hukum yok, dolayisiyla yapilamaz" diye KENDI mantiksal cikarimini
+    YAPMA. Bu, kaynakta olmayan bir bilgiyi (bir YASAK hukmu) sen
+    EKLEMEN anlamina gelir ve kural 1'i ihlal eder. Dogru format ornegi:
+    "Kaynaklar sadece [senaryo A, sorulmayan] durumunu duzenliyor;
+    [senaryo B, sorulan] icin mevzuatta acik bir hukum bulunmuyor - bu
+    nedenle 'yapilabilir' ya da 'yapilamaz' seklinde kesin bir sonuc
+    cikarilamaz, resmi teyit gerekir." 
 3. Madde numarası, fıkra numarası veya herhangi bir referansı ASLA uydurma
    — sadece sana verilen pasajların üstünde yazan madde/fıkra/bent
    bilgisini kullan.
@@ -67,6 +80,16 @@ KURALLAR (bunlara istisnasız uy):
    Kaynak Alıntıları:
    [1]: "pasajdan birebir alınmış kısa alıntı"
    [2]: "pasajdan birebir alınmış kısa alıntı"
+8b. ALINTI BIREBIR OLMALI - KISALTMA/DEGISTIRME YOK: alinti icinde "[...]"
+    ya da "..." KULLANMA (bir bolumu atlayip kisaltma) - bunun yerine
+    pasajdan kesintisiz, tam ve daha kisa bir cumle/cumle parcasi sec.
+    Alintiya HICBIR kelime EKLEME veya cikarma (orn. kaynakta "uretim
+    tesisinin" yaziyorsa alintida "elektrik uretim tesisinin" yazma - tek
+    kelime eklemek bile alintiyi gecersiz kilar). 20 kelimeyi asan bir
+    cumleyi tam alintilamak gerekiyorsa, cumlenin TAMAMINI degil, o
+    cumlenin icinde birebir gecen, kesintisiz, daha kisa bir alt-parcasini
+    sec - cumlenin ortasindan veya sonundan kesintisiz bir parca almak,
+    basindan alip sonunu "[...]" ile kesmekten HER ZAMAN daha iyidir.
 9. Hukuki yorum yapma, hukuki danışmanlık verme — sadece mevzuat metninin
    ne dediğini aktar. Yorum gerekiyorsa bunun senin yorumun olduğunu ve
    bağlayıcı olmadığını belirt.
@@ -114,6 +137,18 @@ KURALLAR (bunlara istisnasız uy):
     yetkinin var olup olmadigi bu pasajlarda belirtilmiyor" gibi. Kurum
     adlarini birbirinin yerine KULLANMA, birbirinin ESANLAMLISI GIBI
     sunma, ya da biri hakkindaki bilgiyi digerine GENELLEME.
+16. SON KONTROL (cevabi yazmayi bitirdikten sonra, gondermeden once yap):
+    Cevabinda "dolayisiyla ... yapilamaz", "bu nedenle ... yasaktir",
+    "... mumkun degildir" gibi bir YASAKLAYICI/OLUMSUZ sonuc cumlesi
+    var mi diye kontrol et. Varsa, kullandigin kaynak pasajlarda bu
+    OLUMSUZ sonucu (yasak/imkansizlik) DOGRUDAN ve ACIKCA soyleyen bir
+    ifade var mi diye tekrar bak. Kaynaklar sadece FARKLI bir senaryoyu
+    (örn. karsi/olumlu durumu) anlatiyorsa ve sen bundan kendi
+    cikariminla bir YASAK sonucu turetmissen (kural 2b ihlali), o
+    cumleyi SIL ve yerine "mevzuatta bu senaryo icin acik bir hukum
+    bulunmuyor, kesin sonuc cikarilamaz" seklinde degistir - "muhtemelen
+    yapilamaz" gibi yumusatilmis bir versiyon da YETERLI DEGILDIR, tam
+    olarak "hukum yok" demen gerekir.
 
 Cevabını Türkçe, net ve öz yaz."""
 
@@ -141,7 +176,8 @@ def generate_answer(
     doc_titles: dict[str, str] | None = None,
     model: str | None = None,
     max_tokens: int = 3200,
-) -> str:
+    return_finish_reason: bool = False,
+):
     """
     chunks: retrieval pipeline'dan gelen (rerank edilmiş) sonuçlar, her biri
     en az "text", "doc_id", "madde_no" alanlarını içermeli.
@@ -149,14 +185,18 @@ def generate_answer(
     SourceDoc.title). Verilmezse doc_id doğrudan kullanılır.
     """
     if not chunks:
-        return (
+        text = (
             "Verilen kaynaklarda bu soruyla ilgili hiçbir pasaj bulunamadı. "
             "Lütfen sorunuzu farklı bir şekilde ifade etmeyi deneyin ya da "
             "resmî EPDK/mevzuat.gov.tr kaynaklarını doğrudan kontrol edin."
         )
+        return (text, "no_chunks") if return_finish_reason else text
 
     context = _format_context(chunks, doc_titles)
     user_prompt = f"KAYNAK PASAJLAR:\n\n{context}\n\nSORU: {query}"
 
-    return chat_completion_text(SYSTEM_PROMPT, user_prompt, model=model, max_tokens=max_tokens, temperature=0.0, reasoning_effort="low")
+    return chat_completion_text(
+        SYSTEM_PROMPT, user_prompt, model=model, max_tokens=max_tokens,
+        temperature=0.0, reasoning_effort="low", return_finish_reason=return_finish_reason,
+    )
 

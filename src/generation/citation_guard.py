@@ -76,19 +76,54 @@ def _normalize_turkish_numbers(text: str) -> str:
     return re.sub(number_word_pattern, _replace, text, flags=re.IGNORECASE)
 
 
+_TYPOGRAPHIC_VARIANTS = {
+    "\u2019": "'", "\u2018": "'",
+    "\u201c": '"', "\u201d": '"',
+    "\u2013": "-", "\u2014": "-",
+}
+
+
+_AMENDMENT_ANNOTATION_RE = re.compile(
+    r"\(\s*(?:Değişik|Ek|Mülga)(?:\s+ibare)?\s*:[^)]*\)\d*",
+    re.IGNORECASE,
+)
+
+
+def _strip_amendment_annotations(text: str) -> str:
+    """
+    RG kaynakli "(Değişik:RG-.../...)", "(Ek:RG-.../...)",
+    "(Değişik ibare:RG-.../...)" gibi degisiklik notlarini - ve bunlara
+    PDF cikariminda bazen boslukusuz yapisan artik rakamlari (orn.
+    "(...)1 bentleri") - metinden temizler. Bu notlar mevzuatin
+    SUBSTANCE'i degil, RG referans/gecmis bilgisi; model okunabilir bir
+    cevap uretirken bunlari (haklı olarak) atlayabiliyor, bizim birebir
+    alinti karsilastirmamiz bunu yanlislikla "uyusmuyor" saymamali.
+    """
+    return _AMENDMENT_ANNOTATION_RE.sub("", text)
+
+
+def _normalize_typography(text: str) -> str:
+    """
+    Kaynak PDF'lerdeki Turkce tipografik kesme isareti (’, ornegin
+    "MW’i", "km’den") ile modelin urettigi DUZ kesme isaretini (')
+    esitler - LLM'ler metin uretirken bu tipografik karakterleri sik sik
+    sadelestirir, bu da aksi halde dogru olan bir alintinin sadece bu
+    karakter farkindan "dogrulanamadi" olarak yanlislikla isaretlenmesine
+    yol acar.
+    """
+    for variant, canonical in _TYPOGRAPHIC_VARIANTS.items():
+        text = text.replace(variant, canonical)
+    return text
+
+
 def _normalize(text: str) -> str:
     """
-    Karşılaştırma için: TÜM boşlukları kaldır (sadece tek boşluğa indirmek
-    değil), küçük harfe çevir. Neden tüm boşluklar: kaynak PDF'lerde font
-    kerning'i kelime ortasına kaçak boşluk sokabiliyor (ör. "işletilmesi"
-    -> "işletil mesi" — Faz 2'de "MA DDE" olarak gördüğümüz sorunun aynısı).
-    Bu, modelin doğru yazdığı bir alıntının, kaynaktaki tesadüfi bir yazım
-    kusuru yüzünden yanlışlıkla "doğrulanamadı" olarak işaretlenmesini
-    engeller. Bu yaklaşımın riski çok düşük: iki farklı kelimenin
-    birleşip yanlışlıkla eşleşmesi için çok uzun ortak alt diziler
-    gerekir, pratikte ihmal edilebilir.
+    Karşılaştırma için: TÜM boşlukları kaldır, küçük harfe çevir, ve
+    tipografik karakter farklarını esitler.
     """
     text = _normalize_turkish_numbers(text)
+    text = _normalize_typography(text)
+    text = _strip_amendment_annotations(text)
     return re.sub(r"\s+", "", text.strip()).lower()
 
 
@@ -104,6 +139,8 @@ class GuardResult:
     is_low_confidence: bool
     best_rerank_score: float | None
     citation_checks: list[CitationCheck] = field(default_factory=list)
+    suspicious_numbers: list[str] = field(default_factory=list)
+    uncited_negative_conclusions: list[str] = field(default_factory=list)
 
     @property
     def has_ungrounded_citations(self) -> bool:
@@ -120,6 +157,83 @@ def check_confidence(
         return True, None
     best = max(scores)
     return best < threshold, best
+
+
+_NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)?")
+
+_LAW_NUMBER_CONTEXT_RE = re.compile(r"\b(\d+)\s+sayılı\b", re.IGNORECASE)
+
+_ARTICLE_NUMBER_CONTEXT_RE = re.compile(
+    r"\b(?:madde|fıkra|bent)\s*\(?(\d+)\)?\b"
+    r"|\b(\d+)\s*(?:inci|ıncı|ncı|nci|uncu|üncü)?\s+(?:madde|fıkra|bent)\w*\b",
+    re.IGNORECASE,
+)
+
+_DATE_RE = re.compile(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
+
+
+def check_numeric_consistency(answer_text: str, chunks: list[dict]) -> list[str]:
+    """
+    Cevap metnindeki sayisal degerlerin, kaynak pasajlarin herhangi
+    birinde gecip gecmedigini kontrol eder. Su durumlar kontrol disi
+    tutulur:
+    - Tek/cift basamaksiz kucuk sayilar (0-9)
+    - "<sayi> sayili <Kanun/Yonetmelik>" (kanun numarasi)
+    - "Madde <sayi>" / "<sayi> uncu madde" / "fikra (<sayi>)" (madde/fikra/
+      bent numarasi)
+    - Tarihler (27.01.2026, 5/6/2023 gibi)
+    """
+    combined_source = _normalize_turkish_numbers(
+        "\n".join(c["text"] for c in chunks)
+    )
+
+    text_without_dates = _DATE_RE.sub(" ", answer_text)
+    answer_numbers = set(_NUMBER_RE.findall(_normalize_turkish_numbers(text_without_dates)))
+
+    law_reference_numbers = {
+        m.group(1) for m in _LAW_NUMBER_CONTEXT_RE.finditer(answer_text)
+    }
+    article_reference_numbers = {
+        m.group(1) or m.group(2)
+        for m in _ARTICLE_NUMBER_CONTEXT_RE.finditer(answer_text)
+    }
+
+    suspicious = []
+    for num in sorted(answer_numbers):
+        if num in law_reference_numbers or num in article_reference_numbers:
+            continue
+        bare_digits = num.replace(".", "").replace(",", "")
+        if len(bare_digits) < 2:
+            continue
+        if num not in combined_source:
+            suspicious.append(num)
+    return suspicious
+
+
+_NEGATIVE_CONCLUSION_RE = re.compile(
+    r"[^.!?\n]*\b(yapılamaz|yapilamaz|mümkün değildir|mumkun degildir|"
+    r"yasaktır|yasaktir|izin verilmez|uygulanamaz|geçerli değildir|"
+    r"gecerli degildir|sağlanmamaktadır|saglanmamaktadir|"
+    r"imkan(?:sızdır|sizdir))[^.!?\n]*[.!?]",
+    re.IGNORECASE,
+)
+_CITATION_MARKER_IN_SENTENCE_RE = re.compile(r"\[\d+\]")
+
+
+def check_uncited_negative_conclusion(answer_text: str) -> list[str]:
+    """
+    Cevap govdesinde (alinti blogu haric) yapilamaz/yasaktir/mumkun
+    degildir gibi OLUMSUZ bir sonuc iceren ama icinde hicbir [N] alinti
+    referansi OLMAYAN cumleleri tespit eder - modelin kendi mantiksal
+    cikarimiyla urettigi bir yasak sonucu olabilecegini gosteren isaret.
+    """
+    body = answer_text.split("Kaynak Alıntıları:")[0]
+    suspicious = []
+    for match in _NEGATIVE_CONCLUSION_RE.finditer(body):
+        sentence = match.group(0)
+        if not _CITATION_MARKER_IN_SENTENCE_RE.search(sentence):
+            suspicious.append(sentence.strip())
+    return suspicious
 
 
 def extract_citation_quotes(answer_text: str) -> dict[int, str]:
@@ -179,12 +293,29 @@ def detect_institution_conflation(answer_text: str) -> bool:
 def run_guard(answer_text: str, chunks: list[dict]) -> GuardResult:
     is_low_confidence, best_score = check_confidence(chunks)
     citation_checks = verify_citations(answer_text, chunks)
+    # Kaynak pasajlar verilmisken cevapta HIC alinti cikarilamamissa
+    # (kural 8'e gore her cevap alinti icermeli), bu kendi basina supheli
+    # bir sinyaldir - modelin alinti blogunu sessizce atladigi (gercek bir
+    # eksiklik) ya da retrieval'in konuyla ilgisiz ama esik-ustu skorlu bir
+    # sonuc bulup modelin "bulamadim" tarzi cevap verdigi (negatif test
+    # senaryosu) durumlarinin ikisini de yakalar - her ikisi de kullaniciya
+    # dusuk guvenle sunulmali.
+    has_no_citations = bool(chunks) and not citation_checks
     has_ungrounded = any(not c.grounded for c in citation_checks)
     has_conflation = detect_institution_conflation(answer_text)
+    suspicious_numbers = check_numeric_consistency(answer_text, chunks) if chunks else []
+    has_suspicious_numbers = bool(suspicious_numbers)
+    uncited_negative_conclusions = check_uncited_negative_conclusion(answer_text)
+    has_uncited_negative = bool(uncited_negative_conclusions)
     return GuardResult(
-        is_low_confidence=is_low_confidence or has_ungrounded or has_conflation,
+        is_low_confidence=(
+            is_low_confidence or has_ungrounded or has_conflation
+            or has_no_citations or has_suspicious_numbers or has_uncited_negative
+        ),
         best_rerank_score=best_score,
         citation_checks=citation_checks,
+        suspicious_numbers=suspicious_numbers,
+        uncited_negative_conclusions=uncited_negative_conclusions,
     )
 
 
@@ -204,5 +335,19 @@ def format_guard_warnings(result: GuardResult) -> str:
             f"UYARI - DOGRULANAMAYAN ALINTI: {nums} numarali referans(lar)in "
             "alintisi, gosterilen kaynak pasajda birebir bulunamadi. Bu "
             "kismi ozellikle resmi metinle karsilastirin."
+        )
+    if result.suspicious_numbers:
+        nums = ", ".join(result.suspicious_numbers)
+        warnings.append(
+            f"UYARI - DOGRULANAMAYAN SAYI: cevapta gecen {nums} degeri/degerleri "
+            "kaynak pasajlarda bulunamadi. Bu rakam(lar)i resmi metinle "
+            "ayrica dogrulayin."
+        )
+    if result.uncited_negative_conclusions:
+        warnings.append(
+            "UYARI - DESTEKSIZ OLUMSUZ SONUC: cevapta bir yasak/imkansizlik "
+            "sonucu var ama bunu destekleyen bir alinti referansi yok - "
+            "bu, modelin kendi cikarimi olabilir. Resmi metni ayrica "
+            "kontrol edin."
         )
     return "\n".join(warnings)

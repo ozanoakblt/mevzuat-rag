@@ -5,6 +5,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.generation.citation_guard import (
     check_confidence,
+    check_numeric_consistency,
+    check_uncited_negative_conclusion,
     extract_citation_quotes,
     format_guard_warnings,
     run_guard,
@@ -117,3 +119,78 @@ def test_format_guard_warnings_flags_ungrounded_citation():
     warnings = format_guard_warnings(result)
     assert "DOGRULANAMAYAN ALINTI" in warnings
     assert "[1]" in warnings
+
+def test_check_numeric_consistency_passes_when_number_in_source():
+    chunks = [{"text": "Basvuru 90 gun icinde sonuclandirilir.", "rerank_score": 1.0}]
+    result = check_numeric_consistency("Basvuru sureci 90 gun surer.", chunks)
+    assert result == []
+
+
+def test_check_numeric_consistency_flags_number_not_in_source():
+    chunks = [{"text": "Basvuru 90 gun icinde sonuclandirilir.", "rerank_score": 1.0}]
+    result = check_numeric_consistency("Basvuru sureci 45 gun surer.", chunks)
+    assert "45" in result
+    assert "90" not in result
+
+
+def test_check_numeric_consistency_ignores_single_digit_numbers():
+    chunks = [{"text": "Madde 5 uygulanir.", "rerank_score": 1.0}]
+    result = check_numeric_consistency("Bu konu Madde 7 kapsamindadir.", chunks)
+    assert result == []
+
+
+def test_check_numeric_consistency_handles_turkish_number_words():
+    chunks = [{"text": "Sure doksan gun olarak belirlenmistir.", "rerank_score": 1.0}]
+    result = check_numeric_consistency("Sure 90 gundur.", chunks)
+    assert result == []
+
+
+def test_run_guard_flags_suspicious_number_as_low_confidence():
+    chunks = [{"text": "Basvuru 90 gun icinde sonuclandirilir.", "rerank_score": 2.0}]
+    answer = 'Basvuru 45 gun icinde sonuclanir.\nKaynak Alintilari:\n[1]: "Basvuru 90 gun icinde sonuclandirilir."'
+    result = run_guard(answer, chunks)
+    assert result.is_low_confidence is True
+    assert "45" in result.suspicious_numbers
+
+
+def test_format_guard_warnings_flags_suspicious_number():
+    chunks = [{"text": "Basvuru 90 gun icinde sonuclandirilir.", "rerank_score": 2.0}]
+    answer = 'Basvuru 45 gun icinde sonuclanir.\nKaynak Alintilari:\n[1]: "Basvuru 90 gun icinde sonuclandirilir."'
+    result = run_guard(answer, chunks)
+    warnings = format_guard_warnings(result)
+    assert "DOGRULANAMAYAN SAYI" in warnings
+    assert "45" in warnings
+
+
+def test_check_uncited_negative_conclusion_flags_unsupported_prohibition():
+    text = "Dolayısıyla, şaltı hazır ama iletim hattı henüz tesis edilmemişse, geçici kabul yapılamaz."
+    result = check_uncited_negative_conclusion(text)
+    assert len(result) == 1
+
+
+def test_check_uncited_negative_conclusion_ignores_honest_refusal():
+    text = 'Kaynaklar bu konuyu duzenlemiyor [1], [2]. Dolayısıyla bu konular için mevzuatta doğrudan bir hüküm bulunmamaktadır.'
+    result = check_uncited_negative_conclusion(text)
+    assert result == []
+
+
+def test_check_uncited_negative_conclusion_ignores_cited_prohibition():
+    text = "Kaynağa göre bu durumda hizmet sağlanamaz [3]."
+    result = check_uncited_negative_conclusion(text)
+    assert result == []
+
+
+def test_run_guard_flags_uncited_negative_conclusion_as_low_confidence():
+    chunks = [{"text": "Bağlantı hattı tesis edildiğinde geçici kabul yapılır.", "rerank_score": 2.0}]
+    answer = 'Bağlantı hattı tesis edildiğinde geçici kabul yapılır [1].\nDolayısıyla hat yoksa geçici kabul yapılamaz.\nKaynak Alıntıları:\n[1]: "Bağlantı hattı tesis edildiğinde geçici kabul yapılır."'
+    result = run_guard(answer, chunks)
+    assert result.is_low_confidence is True
+    assert len(result.uncited_negative_conclusions) == 1
+
+
+def test_format_guard_warnings_flags_uncited_negative_conclusion():
+    chunks = [{"text": "Bağlantı hattı tesis edildiğinde geçici kabul yapılır.", "rerank_score": 2.0}]
+    answer = 'Bağlantı hattı tesis edildiğinde geçici kabul yapılır [1].\nDolayısıyla hat yoksa geçici kabul yapılamaz.\nKaynak Alıntıları:\n[1]: "Bağlantı hattı tesis edildiğinde geçici kabul yapılır."'
+    result = run_guard(answer, chunks)
+    warnings = format_guard_warnings(result)
+    assert "DESTEKSIZ OLUMSUZ SONUC" in warnings

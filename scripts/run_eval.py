@@ -72,7 +72,7 @@ def run_single_question(
     question: dict, embedder, vector_store, bm25_index, reranker, with_generation: bool
 ) -> dict:
     q_text = question["question"]
-    sub_queries = expand_query(q_text)
+    sub_queries = expand_query(q_text, embedder=embedder)
     candidates_by_id: dict[str, dict] = {}
     per_query_results: list[list[dict]] = []
     for sq in sub_queries:
@@ -133,13 +133,17 @@ def run_single_question(
         result["recall_hit"] = _check_recall(reranked, question)
 
     if with_generation:
-        answer = generate_answer(q_text, reranked, doc_titles=DOC_TITLES)
+        answer, finish_reason = generate_answer(
+            q_text, reranked, doc_titles=DOC_TITLES, return_finish_reason=True
+        )
         guard = run_guard(answer, reranked)
         result["guard_low_confidence"] = guard.is_low_confidence
         result["ungrounded_citation_count"] = sum(
             1 for c in guard.citation_checks if not c.grounded
         )
         result["total_citation_count"] = len(guard.citation_checks)
+        result["finish_reason"] = finish_reason
+        result["answer_text"] = answer
 
     return result
 
@@ -174,13 +178,87 @@ def summarize(results: list[dict]) -> dict:
     return summary
 
 
+def select_sample(questions: list[dict], n: int) -> list[dict]:
+    """
+    Tam 49 soru yerine, gelistirme dongusunde hizli test icin N sorudan
+    olusan dengeli bir alt kume secer. Negatif testlerden en az 1 tane
+    (varsa) dahil edilir, kalani difficulty oranina gore bolusturulur.
+    Secim deterministiktir - ayni N icin her zaman ayni sorular doner.
+    """
+    if n >= len(questions):
+        return questions
+
+    def stride_sample(items: list[dict], k: int) -> list[dict]:
+        items = sorted(items, key=lambda q: q["id"])
+        if k <= 0:
+            return []
+        if k >= len(items):
+            return items
+        step = len(items) / k
+        indices = sorted({int(i * step) for i in range(k)})
+        return [items[i] for i in indices]
+
+    negatives = [q for q in questions if not q["expected_documents"]]
+    positives_by_difficulty: dict[str, list[dict]] = {}
+    for q in questions:
+        if q["expected_documents"]:
+            positives_by_difficulty.setdefault(q["difficulty"], []).append(q)
+
+    n_negatives = 0
+    if negatives:
+        n_negatives = min(len(negatives), max(1, round(n * len(negatives) / len(questions))))
+    n_remaining = n - n_negatives
+
+    result = list(stride_sample(negatives, n_negatives))
+    total_positive = sum(len(v) for v in positives_by_difficulty.values())
+    allocated = 0
+    diff_groups = sorted(positives_by_difficulty.items())
+    for idx, (_difficulty, items) in enumerate(diff_groups):
+        if idx == len(diff_groups) - 1:
+            k = n_remaining - allocated
+        elif total_positive:
+            k = round(n_remaining * len(items) / total_positive)
+        else:
+            k = 0
+        k = max(0, min(k, len(items)))
+        result.extend(stride_sample(items, k))
+        allocated += k
+
+    return sorted(result, key=lambda q: q["id"])[:n]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--with-generation", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="eval/results.json'daki tamamlanmis sorulari atlayip devam et",
+    )
+    parser.add_argument(
+        "--ids",
+        type=str,
+        default=None,
+        help=(
+            "virgulle ayrilmis soru id listesi (ornegin q02,q08,q49) - "
+            "sadece bu sorulari, tamamlanmis olsalar bile ZORLA yeniden "
+            "calistirir; results.json'daki diger tum kayitlari degistirmeden "
+            "birakir. --resume ile birlikte kullanilirsa --ids kazanir."
+        ),
+    )
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=None,
+        help="Tam sette degil, N sorudan olusan dengeli/deterministik bir alt kumede calistir.",
+    )
     args = parser.parse_args()
 
     eval_data = json.loads(EVAL_SET_PATH.read_text(encoding="utf-8"))
     questions = eval_data["questions"]
+    if args.sample is not None:
+        questions = select_sample(questions, args.sample)
+        print(f"Sample modu: {len(questions)} soru secildi ({[q['id'] for q in questions]}).")
 
     chunks = load_all_chunks(PROCESSED_DIR)
     if not chunks:
@@ -197,10 +275,34 @@ def main() -> None:
         print("Vektör index boş. Önce python scripts/build_index.py çalıştırın.")
         sys.exit(1)
 
-    results = []
     RESULTS_PATH.parent.mkdir(exist_ok=True)
-    for i, q in enumerate(questions, 1):
-        print(f"  [{i}/{len(questions)}] {q['id']}: {q['question'][:60]}...")
+    results = []
+    completed_ids: set[str] = set()
+
+    if args.ids:
+        target_ids = {t.strip() for t in args.ids.split(",") if t.strip()}
+        unknown = target_ids - {q["id"] for q in questions}
+        if unknown:
+            print(f"UYARI: eval_set.json'da olmayan id'ler: {sorted(unknown)}")
+        if RESULTS_PATH.exists():
+            prev = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
+            results = [r for r in prev.get("results", []) if r["id"] not in target_ids]
+        print(f"Hedefli calistirma: {len(target_ids)} soru ZORLA yeniden calisacak, digerleri korunuyor.")
+        remaining = [q for q in questions if q["id"] in target_ids]
+    elif args.resume and RESULTS_PATH.exists():
+        prev = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
+        prev_results = prev.get("results", [])
+        completed_ids = {
+            r["id"] for r in prev_results
+            if (not args.with_generation) or ("total_citation_count" in r)
+        }
+        results = [r for r in prev_results if r["id"] in completed_ids]
+        print(f"Resume: {len(completed_ids)}/{len(questions)} soru daha once tamamlanmis, atlaniyor.")
+        remaining = [q for q in questions if q["id"] not in completed_ids]
+    else:
+        remaining = questions
+    for i, q in enumerate(remaining, 1):
+        print(f"  [{i}/{len(remaining)}] {q['id']}: {q['question'][:60]}...")
         results.append(
             run_single_question(q, embedder, vector_store, bm25_index, reranker, args.with_generation)
         )
@@ -212,7 +314,7 @@ def main() -> None:
         partial_summary = summarize(results)
         RESULTS_PATH.write_text(
             json.dumps(
-                {"summary": partial_summary, "results": results, "completed": i, "total": len(questions)},
+                {"summary": partial_summary, "results": results, "completed": len(results), "total": len(questions)},
                 ensure_ascii=False,
                 indent=2,
             ),

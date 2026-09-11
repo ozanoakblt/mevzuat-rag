@@ -4,8 +4,12 @@
     {
       "id": "q01",
       "question": "6446 sayılı Elektrik Piyasası Kanununun amacı nedir?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 1"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": "Doğrudan tanım sorgusu, tek maddede net cevap var."
@@ -13,8 +17,12 @@
     {
       "id": "q02",
       "question": "Elektrik piyasasında lisans almak koşuluyla yürütülebilecek faaliyetler nelerdir?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 4"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 4"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -22,8 +30,12 @@
     {
       "id": "q03",
       "question": "Dağıtım şirketi, dağıtım faaliyeti dışında başka bir faaliyetle iştigal edebilir mi?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 9"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 9"
+      ],
       "difficulty": "kolay",
       "scenario_tag": "isletme_sinirlari",
       "notes": null
@@ -31,8 +43,12 @@
     {
       "id": "q04",
       "question": "EV şarj hizmeti hangi lisans kapsamında yürütülür?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["EK MADDE 5"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "EK MADDE 5"
+      ],
       "difficulty": "kolay",
       "scenario_tag": "ev_sarj",
       "notes": "Madde numarası çakışması testi: hem MADDE 5 hem EK MADDE 5 var, doğru olanı (EK) bulmalı."
@@ -40,8 +56,12 @@
     {
       "id": "q05",
       "question": "Bağlantı ve Sistem Kullanım Yönetmeliğinin amacı ve kapsamı nedir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 1"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -49,8 +69,12 @@
     {
       "id": "q06",
       "question": "OSB katılımcılarının sisteme bağlantısı Bağlantı ve Sistem Kullanım Yönetmeliği kapsamında mıdır?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 1"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
       "difficulty": "zor",
       "scenario_tag": "osb_baglantisi",
       "notes": "Kritik istisna testi: doğru cevap 'HAYIR, kapsam DIŞINDA, ayrı OSB yönetmeliğine tabi' olmalı. Faz 8'de bu soruda yanlış çerçeveleme (kapsamda gibi gösterme) hatası yakalanmış, Faz 9'da düzeltilmişti."
@@ -58,8 +82,12 @@
     {
       "id": "q07",
       "question": "İletim sistemine bağlanmak isteyen taraflar kime başvurur?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 6"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 6"
+      ],
       "difficulty": "kolay",
       "scenario_tag": "baglanti_talebi",
       "notes": null
@@ -67,8 +95,12 @@
     {
       "id": "q08",
       "question": "Dağıtım şirketleri ve dağıtım lisansı sahibi OSB'ler anlaşma güçlerinin artırılmasını yılda kaç defa talep edebilir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 7"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 7"
+      ],
       "difficulty": "orta",
       "scenario_tag": "trafo_kapasite",
       "notes": "Spesifik sayısal detay (üç defa) — cevabın doğru sayıyı alıntılaması bekleniyor."
@@ -76,8 +108,12 @@
     {
       "id": "q09",
       "question": "Üretim tesisleri için bağlantı görüşü nasıl verilir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 5"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 5"
+      ],
       "difficulty": "orta",
       "scenario_tag": "dagitik_uretim",
       "notes": null
@@ -85,8 +121,12 @@
     {
       "id": "q10",
       "question": "Elektrik depolama tesisleri için bağlantı görüşü hangi maddede düzenlenir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 5/A"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 5/A"
+      ],
       "difficulty": "orta",
       "scenario_tag": "dagitik_uretim",
       "notes": null
@@ -94,8 +134,12 @@
     {
       "id": "q11",
       "question": "Kullanıcının bağlantısının veya enerjisinin kesilmesi hangi durumlarda mümkündür?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 27"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 27"
+      ],
       "difficulty": "orta",
       "scenario_tag": "acil_mudahale",
       "notes": null
@@ -103,8 +147,12 @@
     {
       "id": "q12",
       "question": "Kullanıcı mülkiyetindeki elektrik tesisleri dağıtım şirketince nasıl devralınır?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 37"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 37"
+      ],
       "difficulty": "orta",
       "scenario_tag": "mulkiyet_devri",
       "notes": null
@@ -112,8 +160,12 @@
     {
       "id": "q13",
       "question": "Bağlantı ve sistem kullanım anlaşmalarındaki ödeme yükümlülüğü nasıl düzenlenir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 22"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 22"
+      ],
       "difficulty": "orta",
       "scenario_tag": "sistem_kullanim_bedeli",
       "notes": null
@@ -121,8 +173,12 @@
     {
       "id": "q14",
       "question": "Sistemden ayrılan bir kullanıcı için teminatlar nasıl işler?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 24"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 24"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -130,8 +186,12 @@
     {
       "id": "q15",
       "question": "İletim sisteminin mülkiyet sınırları nerede başlar?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 8"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 8"
+      ],
       "difficulty": "orta",
       "scenario_tag": "isletme_sinirlari",
       "notes": null
@@ -139,8 +199,12 @@
     {
       "id": "q16",
       "question": "Hizmet Kalitesi Yönetmeliğinin amacı ve kapsamı nedir?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 1"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -148,8 +212,12 @@
     {
       "id": "q17",
       "question": "Kesintiler nasıl sınıflandırılır?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 9"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 9"
+      ],
       "difficulty": "kolay",
       "scenario_tag": "kesinti_tazminat",
       "notes": null
@@ -157,8 +225,12 @@
     {
       "id": "q18",
       "question": "Kesinti süresi aştığında kullanıcılara ödenecek tazminat nasıl hesaplanır?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 16"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 16"
+      ],
       "difficulty": "orta",
       "scenario_tag": "kesinti_tazminat",
       "notes": null
@@ -166,8 +238,12 @@
     {
       "id": "q19",
       "question": "Tedarik sürekliliği kalitesi göstergeleri nasıl hesaplanır?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 15"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 15"
+      ],
       "difficulty": "orta",
       "scenario_tag": "kesinti_tazminat",
       "notes": null
@@ -175,8 +251,13 @@
     {
       "id": "q20",
       "question": "Sistem gerilimi kalitesiyle ilgili hangi şartlar aranır (flicker, harmonik vb.)?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 22", "MADDE 23"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 22",
+        "MADDE 23"
+      ],
       "difficulty": "orta",
       "scenario_tag": "gerilim_kalitesi",
       "notes": "İki maddeye yayılmış bir konu — recall@K'nın en az birini yakalaması yeterli sayılabilir."
@@ -184,8 +265,12 @@
     {
       "id": "q21",
       "question": "Ticari kalite göstergeleri nelerdir ve ihlalinde ne yapılır?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 19"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 19"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -193,8 +278,12 @@
     {
       "id": "q22",
       "question": "Kullanıcı zararının tazmini hangi maddede düzenlenir?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 26"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 26"
+      ],
       "difficulty": "kolay",
       "scenario_tag": "kesinti_tazminat",
       "notes": null
@@ -206,7 +295,7 @@
       "expected_articles": [],
       "difficulty": "zor",
       "scenario_tag": "sayac_arizasi",
-      "notes": "KASITLI ZAYIF KAPSAMA TESTİ: elimizdeki 4 belgede 'sayaç arızası' için özel bir prosedür maddesi yok (sadece genel sayaç bakım/mülkiyet hükümleri var). Beklenen davranış: sistem düşük güven uyarısı vermeli, kesin bir prosedür varmış gibi davranmamalı. expected_documents/articles bilerek boş bırakıldı."
+      "notes": "GUNCELLEME (2026-09-09 dogrulama): Korpus 67 kaynaga buyudukten sonra usul-akilli-sayac.json ve usul-osos.json gibi sayac-ilgili belgeler eklendi - bu sorunun hala kapsam-disi olup olmadigi supheye dustu, --with-generation ile yeniden test edildi. Sonuc: soru HALA GECERLI bir negatif test. Sistem korpusta sayacla ilgili birkac YAKIN ama TAM EsLESMEYEN hukum buldu (sayac degisimi/temini, fazla tuketim iadesi, iletim sistemi sayac tesisi - 4 alinti, hepsi grounded) ama acikca kullanicinin sayac arizasinda ILK ASAMADA ne yapmasi gerektigi konusunda yeterli bilgi bulamadim diyerek soruyu cevaplamadigini dogru sekilde belirtti - UYDURMADI (correct_low_confidence: True, guard_low_confidence: True). Sonuc: model, ilgili gorunen ama sorunun ozunu (ariza SURECI) cevaplamayan pasajlari ayirt edebiliyor - bu, q24teki bulguyla ayni deseni dogruluyor."
     },
     {
       "id": "q24",
@@ -215,7 +304,7 @@
       "expected_articles": [],
       "difficulty": "zor",
       "scenario_tag": null,
-      "notes": "DÜZELTME (bkz. eski q24 notu): orijinal CBS sorusu yanlış varsayıma dayanıyordu (Madde 13/7'de CBS'e gerçek atıf var, sistem onu doğru buluyordu). Yeni soru daha güvenli bir kapsam-dışı test: siber güvenlik/şifreleme, sayaç konusuna yakın (plausible-adjacent) ama elimizdeki 4 belgede hiç değinilmeyen bir teknik alan."
+      "notes": "GUNCELLEME (2026-09-09 dogrulama): Korpus 67 kaynaga buyudukten sonra bir yonetmelik-bilisim-guvenligi.json eklendi - bu sorunun hala kapsam-disi olup olmadigi supheye dustu, --with-generation ile yeniden test edildi. Sonuc: soru HALA GECERLI bir negatif test. Sistem bu belgede akilli sayac SIFRELEME STANDARTLARINA dair hicbir spesifik detay olmadigini dogru sekilde tespit etti - belgede sadece genel bir atif var (bu sistemler [korpusumuzda OLMAYAN, farkli bir] Enerji Sektorunde Siber Guvenlik Yetkinlik Modeli Yonetmeligine tabidir). Model bunu UYDURMADAN dogru rapor etti (correct_low_confidence: True, guard_low_confidence: True, total_citation_count: 2 ama ikisi de sadece bu genel atfin kendisiydi, soruyu cevaplamiyordu). Sonuc: korpusta konuyla YUZEYSEL iliskili bir belge bulunsa da, sorulan spesifik teknik standartlar hala kapsam disinda - bu, negatif testlerin sadece hic ilgili belge yok degil, ilgili gorunen ama yetersiz belge var senaryosunu da dogru yakaladigini kanitliyor."
     },
     {
       "id": "q25",
@@ -229,8 +318,12 @@
     {
       "id": "q26",
       "question": "6446 sayılı Kanuna göre denetim kim tarafından yapılır?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 15"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 15"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -238,8 +331,12 @@
     {
       "id": "q27",
       "question": "Kurul, mevzuata aykırılık tespit ederse ne tür yaptırımlar uygulayabilir?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 16"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 16"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -247,8 +344,12 @@
     {
       "id": "q28",
       "question": "Perakende satış tarifeleri kim tarafından onaylanır?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 17"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 17"
+      ],
       "difficulty": "orta",
       "scenario_tag": "tarife_degisikligi",
       "notes": null
@@ -256,8 +357,12 @@
     {
       "id": "q29",
       "question": "Teknik olmayan kayıp (kaçak kullanım) maliyetleri tarifelere nasıl yansıtılır?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 17"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 17"
+      ],
       "difficulty": "zor",
       "scenario_tag": "kayip_kacak",
       "notes": "Madde 17 içinde spesifik bir bent'te geçiyor, chunk-seviyesi hassasiyet testi."
@@ -265,8 +370,12 @@
     {
       "id": "q30",
       "question": "Arz güvenliğinden kim sorumludur?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 20"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 20"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -274,8 +383,12 @@
     {
       "id": "q31",
       "question": "Organize sanayi bölgeleri hangi şartlarda üretim ve dağıtım lisansı alabilir?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 13"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 13"
+      ],
       "difficulty": "orta",
       "scenario_tag": "osb_baglantisi",
       "notes": null
@@ -283,8 +396,12 @@
     {
       "id": "q32",
       "question": "27.01.2026 tarihli değişiklikle Bağlantı ve Sistem Kullanım Yönetmeliğinin Dağıtım varlıkları maddesinde ne değişti?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 21"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 21"
+      ],
       "difficulty": "zor",
       "scenario_tag": null,
       "notes": "DÜZELTME: orijinal soru 'Madde 20'yi hedefliyordu ama bu maddede 27.01.2026 tarihli hiçbir değişiklik yok (eval çalıştırıldığında ortaya çıktı, kontrol edilmeden yazılmıştı — CBS/q24 vakasıyla aynı kategoriden bir hata). amendment_refs verisi kontrol edilerek gerçekten bu tarihte değişen bir madde (21) ile değiştirildi."
@@ -292,8 +409,12 @@
     {
       "id": "q33",
       "question": "25.06.2026 tarihli değişiklik hangi maddeyi güncelliyor ve bu değişiklik geri ödemeye esas yatırım tutarının güncellenmesiyle mi ilgili?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-06-25-degisiklik"],
-      "expected_articles": ["MADDE 1"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-06-25-degisiklik"
+      ],
+      "expected_articles": [
+        "MADDE 1"
+      ],
       "difficulty": "zor",
       "scenario_tag": null,
       "notes": "İki belge parçasının (tam metin + değişiklik) doğru ayrıştırılıp ayrıştırılmadığını test eder — related_documents bağlantısı burada devreye girmeli."
@@ -301,8 +422,12 @@
     {
       "id": "q34",
       "question": "Anlaşmazlıkların çözümü için hangi yol öngörülüyor?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 35"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 35"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -310,8 +435,12 @@
     {
       "id": "q35",
       "question": "Mücbir sebep hâlleri bağlantı anlaşmasını nasıl etkiler?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 33"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 33"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -319,8 +448,12 @@
     {
       "id": "q36",
       "question": "Önlisans nedir ve kim tarafından verilir?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 6"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 6"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": "GENELLEME TESTİ: bu ve sonraki sorular (q36-q49) daha önce hiç kullanılmadı, sistemi 'ayarlamak' için değil GERÇEK genelleme gücünü ölçmek için eklendi."
@@ -328,8 +461,12 @@
     {
       "id": "q37",
       "question": "Toptan ve perakende satış faaliyetleri kimler tarafından yürütülür?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 10"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 10"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -337,8 +474,12 @@
     {
       "id": "q38",
       "question": "EPİAŞ hangi amaçla ve nasıl kurulmuştur?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 11"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 11"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -346,8 +487,12 @@
     {
       "id": "q39",
       "question": "Elektrik piyasasında özelleştirme süreci nasıl yürütülür?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 18"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 18"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -355,8 +500,12 @@
     {
       "id": "q40",
       "question": "Tebligat işlemlerinde hangi kanun hükümleri uygulanır?",
-      "expected_documents": ["kanun-6446"],
-      "expected_articles": ["MADDE 21"],
+      "expected_documents": [
+        "kanun-6446"
+      ],
+      "expected_articles": [
+        "MADDE 21"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -364,8 +513,12 @@
     {
       "id": "q41",
       "question": "Bağlantı ve sistem kullanım hakları nasıl düzenlenir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 4"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 4"
+      ],
       "difficulty": "orta",
       "scenario_tag": "baglanti_talebi",
       "notes": null
@@ -373,8 +526,12 @@
     {
       "id": "q42",
       "question": "Dağıtım sisteminden ayrılma hangi şartlara bağlıdır?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 16"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 16"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -382,8 +539,12 @@
     {
       "id": "q43",
       "question": "Özel direkt hat tesisi kurulması için ne gereklidir?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 18"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 18"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -391,8 +552,12 @@
     {
       "id": "q44",
       "question": "Bağlantı ve sistem kullanım anlaşmalarında gizlilik nasıl korunur?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 31"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 31"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -400,8 +565,12 @@
     {
       "id": "q45",
       "question": "Gerçeğe aykırı beyanda bulunan kullanıcıya ne olur?",
-      "expected_documents": ["yonetmelik-baglanti-sistem-kullanim-2026-01-27"],
-      "expected_articles": ["MADDE 32"],
+      "expected_documents": [
+        "yonetmelik-baglanti-sistem-kullanim-2026-01-27"
+      ],
+      "expected_articles": [
+        "MADDE 32"
+      ],
       "difficulty": "orta",
       "scenario_tag": null,
       "notes": null
@@ -409,8 +578,12 @@
     {
       "id": "q46",
       "question": "Hizmet kalitesinden kim sorumludur?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 4"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 4"
+      ],
       "difficulty": "kolay",
       "scenario_tag": null,
       "notes": null
@@ -418,8 +591,12 @@
     {
       "id": "q47",
       "question": "Kesintilerden etkilenen kullanıcı sayısı nasıl tespit edilir?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 12"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 12"
+      ],
       "difficulty": "orta",
       "scenario_tag": "kesinti_tazminat",
       "notes": null
@@ -427,8 +604,12 @@
     {
       "id": "q48",
       "question": "Teknik kalite ölçüm sonuçları Kuruma nasıl sunulur?",
-      "expected_documents": ["yonetmelik-hizmet-kalitesi"],
-      "expected_articles": ["MADDE 24"],
+      "expected_documents": [
+        "yonetmelik-hizmet-kalitesi"
+      ],
+      "expected_articles": [
+        "MADDE 24"
+      ],
       "difficulty": "zor",
       "scenario_tag": "gerilim_kalitesi",
       "notes": null
@@ -441,6 +622,33 @@
       "difficulty": "zor",
       "scenario_tag": null,
       "notes": "GENELLEME NEGATİF TESTİ: park cezaları/trafik ihlalleri elimizdeki 4 belgenin tamamen dışında bir konu. ÖNEMLİ BULGU: run_eval.py'nin basit 'rerank skoru < 0' ölçütü bunu YANLIŞ ALARM olarak işaretledi (skor +2.04, çünkü sorgu 'elektrikli araç şarj istasyonu işletmecisi' gibi EK MADDE 5'te gerçekten geçen güçlü terimler içeriyor — retrieval haklı olarak konusal olarak alakalı bir pasaj buldu). Ama python scripts/answer.py ile tam pipeline (generation + citation_guard) çalıştırıldığında sistem doğru şekilde 'Verilen kaynaklarda bu konuda yeterli bilgi bulamadım' dedi — UYDURMADI. Bu, retrieval güveninin (konusal alaka) generation'ın gerçek cevap verip vermediğinden (spesifik soru) FARKLI bir şey olduğunu kanıtlıyor. run_eval.py'nin negative-test ölçütü sadece retrieval-confidence kullandığı için burada yanlış alarm verdi; --with-generation ile çalıştırılırsa doğru sonucu (başarılı) verir."
+    },
+    {
+      "id": "q50",
+      "question": "Doğalgaz depolama tesisi lisansı almak için hangi şartlar aranır?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "DOGRULANDI (2026-09-09): --with-generation ile test edildi. Sistem korpusta dogalgaz depolamayla YUZEYSEL iliskili bir hukum buldu (onlisans/lisans basvuru CAKISMASI durumunda oncelik sirasi kurali - dogalgaz depolama bu listede bir madde olarak geciyor) ama acikca dogrudan dogalgaz depolama tesisi lisansi almak icin aranan genel sartlar yer almamaktadir diyerek soruyu cevaplamadigini dogru sekilde belirtti - UYDURMADI. NOT: guard_low_confidence bu vakada False cikti (total_citation_count: 1, grounded) - bu, guard'imizin bilinen bir sinirlamasi: alinti var VE dogru (grounded) ama sorunun ozunu cevaplamiyor durumunu yakalayamiyor (bu, anlamsal/NLI seviyesi bir analiz gerektirir, basit regex/string eslesmesiyle cozulemez). Soru gecerliligini koruyor, ama bu ornek ayni zamanda citation_guard'in bir sinirini da belgeliyor."
+    },
+    {
+      "id": "q51",
+      "question": "Nükleer enerji santrali kurulması için hangi kurumdan izin alınır?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "KASITLI KAPSAM DISI TEST: nukleer enerji lisanslamasi ayri bir kurumun (Nukleer Duzenleme Kurumu) ve ayri bir kanunun (Nukleer Enerji Kanunu) yetki alaninda - EPDK elektrik piyasasi mevzuatinin tamamen disinda. Sistem bunu uydurmadan reddetmeli."
+    },
+    {
+      "id": "q52",
+      "question": "Elektrik faturalarında uygulanan KDV oranı nedir?",
+      "expected_documents": [],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "KASITLI KAPSAM DISI TEST: KDV orani vergi hukuku/Hazine ve Maliye Bakanligi yetki alaninda, EPDK'nin dogrudan duzenledigi bir konu degil ve korpusumuzda hicbir kaynak vergi oranlarindan bahsetmiyor. Tarife tebligleri fiyat/bedel hesaplamalarindan bahsetse de KDV orani ayri, vergi kanunuyla belirlenen bir deger - sistem bunu tarife maddeleriyle karistirip uydurmamali."
     }
   ]
 }

@@ -13,12 +13,17 @@ import time
 
 import requests
 
+from .usage_logger import log_usage
+
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 
 
 class GroqError(Exception):
     pass
+
+
+_rate_limited_until: float = 0.0
 
 
 def _request(
@@ -39,6 +44,14 @@ def _request(
         raise GroqError(
             "GROQ_API_KEY tanımlı değil. .env dosyasına ekleyin "
             "(https://console.groq.com/keys adresinden ücretsiz alınabilir)."
+        )
+
+    global _rate_limited_until
+    if time.time() < _rate_limited_until:
+        remaining = _rate_limited_until - time.time()
+        raise GroqError(
+            f"Groq oncesinde bilinen kota asimi hala gecerli (~{remaining:.0f}s "
+            "kaldi) - gercek istek gonderilmeden atlaniyor."
         )
 
     model = model or os.environ.get("GROQ_MODEL", DEFAULT_MODEL)
@@ -69,6 +82,7 @@ def _request(
         )
         if resp.status_code == 429:
             wait_s = _parse_retry_wait_seconds(resp.text) or 5.0
+            _rate_limited_until = time.time() + wait_s
             if attempt < max_retries:
                 time.sleep(wait_s + 0.5)
                 continue
@@ -76,7 +90,13 @@ def _request(
             raise GroqError(f"Groq API hatası ({resp.status_code}): {resp.text[:500]}")
 
         data = resp.json()
-        return data["choices"][0]["message"]["content"]
+        usage = data.get("usage") or {}
+        log_usage(
+            "groq", model,
+            usage.get("prompt_tokens"), usage.get("completion_tokens"), usage.get("total_tokens"),
+        )
+        choice = data["choices"][0]
+        return choice["message"]["content"], choice.get("finish_reason")
 
     raise GroqError("Groq rate limit: birden fazla denemeden sonra başarısız oldu.")
 
@@ -91,7 +111,7 @@ def chat_completion_json(
 ) -> dict:
     """Kapalı-uçlu sınıflandırma gibi görevler için — yanıtın JSON olmasını
     ister, parse edip dict döner."""
-    content = _request(
+    content, _finish_reason = _request(
         system_prompt,
         user_prompt,
         model,
@@ -119,9 +139,14 @@ def chat_completion_text(
     max_retries: int = 4,
     max_tokens: int = 1000,
     reasoning_effort: str | None = None,
-) -> str:
-    """Serbest metin üretimi için (Faz 8: cevap üretme). Ham metin döner."""
-    return _request(
+    return_finish_reason: bool = False,
+):
+    """Serbest metin üretimi için (Faz 8: cevap üretme). Ham metin döner.
+    return_finish_reason=True ise (icerik, finish_reason) tuple'i doner -
+    finish_reason == "length" cevabin max_tokens'a carpip kesildigini,
+    yani alinti bolumune hic ulasamamis olabilecegini gosterir.
+    """
+    content, finish_reason = _request(
         system_prompt,
         user_prompt,
         model,
@@ -130,10 +155,11 @@ def chat_completion_text(
         max_retries,
         max_tokens=max_tokens,
         json_mode=False,
-        # Cevap üretimi daha fazla akıl yürütme gerektirebilir; "low" yerine
-        # varsayılanı (None -> API'nin kendi varsayılanı) kullanıyoruz.
         reasoning_effort=reasoning_effort,
     )
+    if return_finish_reason:
+        return content, finish_reason
+    return content
 
 
 def _parse_retry_wait_seconds(error_text: str) -> float | None:

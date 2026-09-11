@@ -1,12 +1,13 @@
 {
   "summary": {
-    "total_questions": 49,
-    "recall_at_5_overall": 0.9333333333333333,
-    "recall_at_5_kolay": 0.9411764705882353,
-    "recall_at_5_orta": 0.9130434782608695,
+    "total_questions": 15,
+    "recall_at_5_overall": 0.8461538461538461,
+    "recall_at_5_kolay": 0.8,
+    "recall_at_5_orta": 0.8571428571428571,
     "recall_at_5_zor": 1.0,
-    "negative_test_success_rate": 0.75,
-    "negative_test_count": 4
+    "negative_test_success_rate": 0.5,
+    "negative_test_count": 2,
+    "citation_groundedness_rate": 0.9333333333333333
   },
   "results": [
     {
@@ -14,343 +15,180 @@
       "difficulty": "kolay",
       "is_negative_test": false,
       "best_rerank_score": 9.435314178466797,
-      "recall_hit": true
-    },
-    {
-      "id": "q02",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 5.733879566192627,
-      "recall_hit": true
-    },
-    {
-      "id": "q03",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 10.320281028747559,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 1,
+      "finish_reason": "stop",
+      "answer_text": "**6446 Sayılı Elektrik Piyasası Kanunu’nun amacı**  \nKanunun amacı, “elektriğin yeterli, kaliteli, sürekli, düşük maliyetli ve çevreyle uyumlu bir şekilde tüketicilerin kullanımına sunulması için, rekabet ortamında özel hukuk hükümlerine göre faaliyet gösteren, mali açıdan güçlü, istikrarlı ve şeffaf bir elektrik enerjisi piyasasının oluşturulması ve bu piyasada bağımsız bir düzenleme ve denetimin yapılmasının sağlanmasıdır” [2].\n\n**Kaynak Alıntıları**  \n[2]: \"Bu Kanunun amacı; ele ktriğin yeterli, kaliteli, sürekli, düşük maliyetli ve çevreyle uyumlu bir şekilde tüketicilerin kullanımına sunulması için, rekabet ortamında özel hukuk hükümlerine göre faaliyet gösteren, mali açıdan güçlü, istikrarlı ve şeffaf bir elektrik enerjisi piyasasının oluşturulması ve bu piyasada bağımsız bir düzenleme ve denetimin yapılmasının sağlanmasıdır.\""
     },
     {
       "id": "q04",
       "difficulty": "kolay",
       "is_negative_test": false,
-      "best_rerank_score": 3.359755754470825,
-      "recall_hit": true
-    },
-    {
-      "id": "q05",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 3.6494297981262207,
-      "recall_hit": true
+      "best_rerank_score": 3.3597536087036133,
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 1,
+      "finish_reason": "stop",
+      "answer_text": "EV şarj hizmeti, **şarj ağı işletmeci lisansı** kapsamında yürütülür.  \n\nKaynak Alıntıları:  \n[1]: \"Şarj hizmeti, Kurum tarafından ticari amaçlı olmamak üzere belirlenen istisnalar dışında, şarj ağı işletmeci lisansı kapsamında bu Kanun ve bu Kanuna göre çıkarılan yönetmelikler uyarınca yürütülür.\""
     },
     {
       "id": "q06",
       "difficulty": "zor",
       "is_negative_test": false,
       "best_rerank_score": 10.367209434509277,
-      "recall_hit": true
-    },
-    {
-      "id": "q07",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 7.773464679718018,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 1,
+      "finish_reason": "stop",
+      "answer_text": "OSB katılımcılarının sisteme bağlantısı **Bağlantı ve Sistem Kullanım Yönetmeliği kapsamında değildir**.  \nKaynak: [1] “OSB katılımcılarının ve endüstri bölgesi yatırımcılarının sisteme bağlantısı ve sistem kullanımına ilişkin hususlar, bu Yönetmeliğin kapsamı dışındadır.”  \n\nKaynak Alıntıları:  \n[1]: \"OSB katılımcılarının ve endüstri bölgesi yatırımcılarının sisteme bağlantısı ve sistem kullanımına ilişkin hususlar, bu Yönetmeliğin kapsamı dışındadır.\""
     },
     {
       "id": "q08",
       "difficulty": "orta",
       "is_negative_test": false,
       "best_rerank_score": 10.894914627075195,
-      "recall_hit": true
-    },
-    {
-      "id": "q09",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 7.065638065338135,
-      "recall_hit": true
-    },
-    {
-      "id": "q10",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 5.536181926727295,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 0,
+      "finish_reason": "stop",
+      "answer_text": "Dağıtım şirketleri ve dağıtım lisansı sahibi OSB’ler, aynı fiyatlandırma yılı içerisinde **en fazla üç defa** anlaşma güçlerinin artırılmasını talep edebilirler. [3]"
     },
     {
       "id": "q11",
       "difficulty": "orta",
       "is_negative_test": false,
       "best_rerank_score": 5.226637840270996,
-      "recall_hit": true
-    },
-    {
-      "id": "q12",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 2.785083055496216,
-      "recall_hit": true
-    },
-    {
-      "id": "q13",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 1.8113746643066406,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 8,
+      "finish_reason": "stop",
+      "answer_text": "**Kullanıcının bağlantısının veya enerjisinin kesilmesi hangi durumlarda mümkündür?**  \n\n- **Kullanıcının yazılı isteği**: Kullanıcının bir bağlantı noktasında enerjisinin kesilmesini yazılı olarak talep etmesi halinde, talep kullanıcıyla varılan mutabakata göre TEİAŞ veya dağıtım şirketi tarafından yerine getirilir.  \n  - [1]  \n  - [2]  \n\n- **Enerji kesilmesini gerektiren durumlar**: Bağlantı, sistem kullanım ve enterkonneksiyon kullanım anlaşmaları ile ilgili mevzuat hükümleri gereğince enerji kesilmesini gerektiren durumlar.  \n  - [3]  \n\n- **Mücbir sebep hallerinden birine bağlı durumlar**:  \n  - [4]  \n\n- **Kullanıcının bağlantı ve/veya sistem kullanım anlaşmasının herhangi bir sebeple feshedilmiş olması**:  \n  - [5]  \n  - [7]  \n\n- **Can ve mal emniyetinin sağlanmasının gerektirdiği durumlar**:  \n  - [6]  \n\n- **Kullanıcının yazılı isteği üzerine veya kullanıcıdan kaynaklanan nedenlere dayalı enerjiyi kesme ve tekrar verme işlemleri**: Bu işlemlerle ilgili yapılan harcamalar kullanıcı tarafından karşılanır.  \n  - [8]  \n\n> **Not**: Yukarıdaki maddeler, verilen kaynak pasajlarında açıkça belirtilen koşullardır. Başka bir koşul veya istisna bu pasajlarda yer almamaktadır.  \n\n**Kaynak Alıntıları**  \n[1]: \"Kullanıcının bir bağlantı noktasında enerjisinin kesilmesini yazılı olarak talep etmesi halinde, söz konusu talep, kullanıcıyla varılan mutabakata göre TEİAŞ veya dağıtım şirketi tarafından yerine getirilir.\"  \n[2]: \"Kullanıcının bir bağlantı noktasında enerjisinin kesilmesini yazılı olarak talep etmesi halinde, söz konusu talep, kullanıcıyla varılan mutabakata göre TEİAŞ veya dağıtım şirketi tarafından yerine getirilir.\"  \n[3]: \"Bağlantı, sistem kullanım ve enterkonneksiyon kullanım anlaşmaları ile ilgili mevzuat hükümleri gereğince enerji kesilmesini gerektiren durumlar.\"  \n[4]: \"Mücbir sebep hallerinden birine bağlı durumlar.\"  \n[5]: \"Kullanıcının bağlantı ve/veya sistem kullanım anlaşmasının herhangi bir sebeple feshedilmiş olması.\"  \n[7]: \"Kullanıcının bağlantı ve/veya sistem kullanım anlaşmasının herhangi bir sebeple feshedilmiş olması.\"  \n[6]: \"Can ve mal emniyetinin sağlanmasının gerektirdiği durumlar.\"  \n[8]: \"TEİAŞ ve dağıtım şirketinin, kullanıcının yazılı isteği üzerine veya kullanıcıdan kaynaklanan nedenlere dayalı enerjiyi kesme ve tekrar verme işlemleri ile ilgili olarak yaptığı harcamalar, kullanıcı tarafından karşılanır.\""
     },
     {
       "id": "q14",
       "difficulty": "orta",
       "is_negative_test": false,
-      "best_rerank_score": 1.2784514427185059,
-      "recall_hit": false
-    },
-    {
-      "id": "q15",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 3.6778221130371094,
-      "recall_hit": true
+      "best_rerank_score": 1.2784509658813477,
+      "recall_hit": false,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 4,
+      "finish_reason": "stop",
+      "answer_text": "**Sistemden ayrılan bir kullanıcı için teminatların işleyişi**\n\n1. **Teminatın iade edilmesi**  \n   Kullanıcı tesisinin iletim sistemine bağlantısı için TEİAŞ’ın yatırım programı kapsamında tesis edilen iletim varlıklarına ihtiyaç duyulması halinde, kullanıcıdan alınan teminat, bağlantı anlaşması hükümleri kapsamında TEİAŞ tarafından, lisansı sona eren/iletim sisteminden ayrılan kullanıcıya iade edilir.  \n   [1]\n\n2. **Ayrılma sonrası teminatın tutarı**  \n   İletim sisteminden herhangi bir sebeple ayrılan kullanıcının, ayrılma tarihinden itibaren bir yıl içerisinde aynı noktadan iletim sistemine yeniden bağlanma talebinde bulunması durumunda, kullanıcı ayrılma tarihinden yeniden bağlanma tarihine kadar olan süreyi kapsayan zaman dilimi için önceki anlaşma gücü üzerinden ilgili dönemin sabit iletim bedellerine göre hesaplanan bedeli TEİAŞ’a ödemekle yükümlüdür.  \n   [3]\n\n3. **Teminatın miktarı**  \n   Başvuru yapan tüzel kişilerden talep ettikleri kapasite miktarları ve yürürlükteki iletim sistemi sistem kullanım tarifesi esas alınarak 2 (iki) aylık sistem kullanım bedeli tutarında teminat alınır.  \n   [5]  \n   Aynı hüküm, başka bir pasajda da tekrarlanmıştır:  \n   [8]\n\n---\n\n### Kaynak Alıntıları  \n[1]: \"Kullanıcı tesisinin iletim sistemine bağlantısı için TEİAŞ’ın yatırım programı kapsamında tesis edilen iletim varlıklarına iletim şebekesi içinde ihtiyaç duyulması halinde, kullanıcıdan alınan teminat, bağlantı anlaşması hükümleri kapsamında TEİAŞ tarafından, lisansı sona eren/iletim sisteminden ayrılan kullanıcıya iade edilir.\"  \n[3]: \"İletim sisteminden herhangi bir sebeple ayrılan kullanıcının, ayrılma tarihinden itibaren bir yıl içerisinde aynı noktadan iletim sistemine yeniden bağlanma talebinde bulunması durumunda, kullanıcı ayrılma tarihinden yeniden bağlanma tarihine kadar olan süreyi kapsayan zaman dilimi için önceki anlaşma gücü üzerinden ilgili dönemin sabit iletim bedellerine göre hesaplanan bedeli TEİAŞ’a ödemekle yükümlüdür.\"  \n[5]: \"Başvuru yapan tüzel kişilerden talep ettikleri kapasite miktarları ve yürürlükteki iletim sistemi sistem kullanım tarifesi esas alınarak 2 (iki) aylık sistem kullanım bedeli tutarında teminat alınır.\"  \n[8]: \"Başvuru yapan tüzel kişilerden talep ettikleri kapasite miktarları ve yürürlükteki iletim sistemi sistem kullanım tarifesi esas alınarak 2 (iki) aylık sistem kullanım bedeli tutarında teminat alınır.\""
     },
     {
       "id": "q16",
       "difficulty": "kolay",
       "is_negative_test": false,
-      "best_rerank_score": -0.8666432499885559,
-      "recall_hit": false
-    },
-    {
-      "id": "q17",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 2.820582389831543,
-      "recall_hit": true
-    },
-    {
-      "id": "q18",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 7.337226867675781,
-      "recall_hit": true
+      "best_rerank_score": -0.866643488407135,
+      "recall_hit": false,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 3,
+      "finish_reason": "stop",
+      "answer_text": "**Hizmet Kalitesi Yönetmeliği’nin amacı ve kapsamı**\n\n1. **Amaç**  \n   Yönetmelik, dağıtım sisteminde sunulan hizmetin kalitesinin izlenmesi, ölçülmesi ve raporlanmasını sağlayarak, tedarik sürekliliği, ticari ve teknik kalite alanlarında standart bir çerçeve oluşturmayı hedefler.  \n   *Kaynak: [1] Madde 5, fıkra (1)*  \n\n2. **Kapsam**  \n   - Yönetmelik, dağıtım sisteminde sunulan hizmetin kalitesini üç ana başlık altında inceler:  \n     a) **Tedarik sürekliliği kalitesi**  \n     b) **Ticari kalite**  \n     c) **Teknik kalite**  \n   - Bu başlıklar, Kurum tarafından izlenir ve raporlanır.  \n   *Kaynak: [1] Madde 5, fıkra (1)*  \n   *Kaynak: [4] Madde 5, fıkra (1)*  \n\n3. **Uygulama alanı**  \n   - Yönetmelik, dağıtım şirketlerinin dağıtım lisansında belirlenen bölgede bulunan kullanıcılara sunduğu hizmetin kalitesinden sorumludur.  \n   - Ayrıca, görevli tedarik şirketinin perakende satış faaliyetine ilişkin ticari kaliteden de sorumludur.  \n   *Kaynak: [6] Madde 4, fıkra (1)*  \n\n**Kaynak Alıntıları**  \n[1]: \"Dağıtım sisteminde sunulan hizmetin kalitesi; a) Tedarik sürekliliği kalitesi, b) Ticari kalite, c) Teknik kalite olmak üzere, Kurum tarafından üç ana başlık altında izlenir.\"  \n[4]: \"Dağıtım sisteminde sunulan hizmetin kalitesi; a) Tedarik sürekliliği kalitesi, b) Ticari kalite, c) Teknik kalite olmak üzere, Kurum tarafından üç ana başlık altında izlenir.\"  \n[6]: \"Dağıtım şirketi, dağıtım lisansında belirlenen bölgede bulunan kullanıcılara sunduğu hizmetin kalitesinden ve görevli tedarik şirketi perakende satış faaliyetine ilişkin ticari kaliteden sorumludur.\""
     },
     {
       "id": "q19",
       "difficulty": "orta",
       "is_negative_test": false,
       "best_rerank_score": 3.137789487838745,
-      "recall_hit": true
-    },
-    {
-      "id": "q20",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": -0.9353961944580078,
-      "recall_hit": false
-    },
-    {
-      "id": "q21",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 1.2912598848342896,
-      "recall_hit": true
-    },
-    {
-      "id": "q22",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": -0.25038865208625793,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 5,
+      "finish_reason": "stop",
+      "answer_text": "**Tedarik sürekliliği kalitesi göstergelerinin hesaplanması**\n\n1. **TKSÜRE ve TKSAYI’nın belirlenmesi**  \n   - Dağıtım transformatörü için TKSÜRE (kesinti süresi) ve TKSAYI (kesinti sayısı) belirlenirken, **AG seviyesinde meydana gelen ancak dağıtım transformatörüne bağlı bütün kullanıcıların etkilendiği kesintiler de hesaplamaya dahil edilir**.  \n     [3]\n\n2. **Bildirimli ve bildirimsiz kesintilerin ayrı ayrı hesaplanması**  \n   - Kullanıcılara ait TKSAYI ve TKSÜRE, **bildirimli ve bildirimsiz kesintiler için ayrı ayrı hesaplanır**.  \n     [8]\n\n3. **Aşım durumunda ekleme**  \n   - Hesaplanan TKSÜRE ile TKSAYI değerlerine ilişkin olarak, **bildirimli kesintiler için Tablo 9’da belirlenen sınır değerler aşıldığında, aşan kısım bildirimsiz kesinti süre ve sayılarına eklenerek değerlendirilir**.  \n     [4]  \n     (Aynı hüküm, güncel yönetmelikte de geçerlidir)  \n     [7]\n\n4. **Kayıtların raporlanması**  \n   - Dağıtım şirketi, **tutulan kayıtlardan hesaplanan kalite göstergelerini dağıtım bölgesi, il ve ilçe bazında aylık olarak internet sitesinde yayımlar**.  \n     [6]\n\n---\n\n### Kaynak Alıntıları  \n[3]: \"Dağıtım transformatörü için TKSÜRE ve TKSAYI belirlenirken, AG seviyesinde meydana gelen ancak dağıtım transformatörüne bağlı bütün kullanıcıların etkilendiği kesintiler de hesaplamaya dahil edilir.\"  \n[8]: \"Kullanıcılara ait TKSAYI ve TKSÜRE, bildirimli ve bildirimsiz kesintiler için ayrı ayrı hesaplanır.\"  \n[4]: \"Hesaplanan TKSÜRE ile TKSAYI değerlerine ilişkin olarak bildirimli kesintiler için Tablo 9’da belirlenen sınır değerler aşıldığında, aşan kısım bildirimsiz kesinti süre ve sayılarına eklenerek değerlendirilir.\"  \n[7]: \"Hesaplanan TKSÜRE ile TKSAYI değerlerine ilişkin olarak bildirimli kesintiler için Tablo 9’da belirlenen sınır değerler aşıldığında, aşan kısım bildirimsiz kesinti süre ve sayılarına eklenerek değerlendirilir.\"  \n[6]: \"Dağıtım şirketi; tutulan kayıtlardan hesaplanan kalite göstergelerini dağıtım bölgesi, il ve ilçe bazında aylık olarak internet sitesinde yayımlar.\""
     },
     {
       "id": "q23",
       "difficulty": "zor",
       "is_negative_test": true,
-      "best_rerank_score": -1.6783626079559326,
-      "correct_low_confidence": true
-    },
-    {
-      "id": "q24",
-      "difficulty": "zor",
-      "is_negative_test": true,
-      "best_rerank_score": -3.7770602703094482,
-      "correct_low_confidence": true
-    },
-    {
-      "id": "q25",
-      "difficulty": "zor",
-      "is_negative_test": true,
-      "best_rerank_score": -0.0461207740008831,
-      "correct_low_confidence": true
-    },
-    {
-      "id": "q26",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": -0.03077828511595726,
-      "recall_hit": true
-    },
-    {
-      "id": "q27",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 8.133134841918945,
-      "recall_hit": true
+      "best_rerank_score": -1.678363561630249,
+      "correct_low_confidence": true,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 6,
+      "finish_reason": "stop",
+      "answer_text": "**Sayaç arızası durumunda kullanıcı için geçerli süreç**\n\n1. **Bilgilendirme**  \n   - Kullanıcı, mobil uygulama üzerinden **bildirimli kesintiler** için ilgili mevzuatta tanımlanan süre öncesinde yapılacak çalışmaya ilişkin bilgi alır.  \n   - **Bildirimsiz kesintiler** durumunda ise arızanın giderilme sürecine dair bilgi verilir.  \n   - [1] Madde 7, fıkra (2), bent g)  \n   - [2] Madde 7, fıkra (2), bent g)  \n   - [3] Madde 7, fıkra (2), bent g)\n\n2. **Sayaç değişimi veya ilk tesis edilmesi**  \n   - Kullanıcı mülkiyetindeki sayaçların değiştirilmesi durumunda, **kullanıcı** sayaç ve modemleri temin eder; **TEİAŞ** ise tesis eder.  \n   - İlk defa tesis edilecek akıllı sayaçlara ilişkin iletişim altyapısı yoksa, bu altyapı da **kullanıcı** tarafından temin ve tesis edilir.  \n   - İletim sistemine verilen ya da iletim sisteminden çekilen elektrik enerjisini ölçen tüm sayaçların **akıllı sayaç** olması gerekir.  \n   - [4] Madde 6, fıkra (2)  \n   - [5] Madde 6, fıkra (2)  \n   - [6] Madde 6, fıkra (2)\n\n**Kaynak Alıntıları**  \n[1]: \"Kullanıcılara; bildirimli kesintilere ilişkin ilgili mevzuatta tanımlanan süre öncesinde yapılacak çalışmaya, bildirimsiz kesintilerde ise arızanın giderilme sürecine dair bilgi verir.\"  \n[2]: \"Kullanıcılara; bildirimli kesintilere ilişkin ilgili mevzuatta tanımlanan süre öncesinde yapılacak çalışmaya, bildirimsiz kesintilerde ise arızanın giderilme sürecine dair bilgi verir.\"  \n[3]: \"Kullanıcılara; bildirimli kesintilere ilişkin ilgili mevzuatta tanımlanan süre öncesinde yapılacak çalışmaya, bildirimsiz kesintilerde ise arızanın giderilme sürecine dair bilgi verir.\"  \n[4]: \"İletim sisteminde kullanıcı mülkiyetindeki sayaçların değiştirilmesi durumunda ve kullanıcılar için ilk defa tesis edilecek sayaç ve modemler kullanıcı tarafından temin edilir, TEİAŞ tarafından tesis edilir. İlk defa tesis edilecek akıllı sayaçlara ilişkin iletişim altyapısı bulunmaması durumunda iletişim altyapısı kullanıcı tarafından temin ve tesis edilir. İletim sistemine verilen ya da iletim sisteminden çekilen elektrik enerjisini ölçen sayaçların tümünün akıllı sayaç olması gerekir.\"  \n[5]: \"İletim sisteminde kullanıcı mülkiyetindeki sayaçların değiştirilmesi durumunda ve kullanıcılar için ilk defa tesis edilecek sayaç ve modemler kullanıcı tarafından temin edilir, TEİAŞ tarafından tesis edilir. İlk defa tesis edilecek akıllı sayaçlara ilişkin iletişim altyapısı bulunmaması durumunda iletişim altyapısı kullanıcı tarafından temin ve tesis edilir. İletim sistemine verilen ya da iletim sisteminden çekilen elektrik enerjisini ölçen sayaçların tümünün akıllı sayaç olması gerekir.\"  \n[6]: \"İletim sisteminde kullanıcı mülkiyetindeki sayaçların değiştirilmesi durumunda ve kullanıcılar için ilk defa tesis edilecek sayaç ve modemler kullanıcı tarafından temin edilir, TEİAŞ tarafından tesis edilir. İlk defa tesis edilecek akıllı sayaçlara ilişkin iletişim altyapısı bulunmaması durumunda iletişim altyapısı kullanıcı tarafından temin ve tesis edilir. İletim sistemine verilen ya da iletim sisteminden çekilen elektrik enerjisini ölçen sayaçların tümünün akıllı sayaç olması gerekir.\""
     },
     {
       "id": "q28",
       "difficulty": "orta",
       "is_negative_test": false,
       "best_rerank_score": 9.212340354919434,
-      "recall_hit": true
-    },
-    {
-      "id": "q29",
-      "difficulty": "zor",
-      "is_negative_test": false,
-      "best_rerank_score": 7.133772373199463,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 0,
+      "finish_reason": "stop",
+      "answer_text": "Perakende satış tarifeleri, **Kurul** tarafından onaylanır.  \n- Madde 17, fıkra (6), bent d) (Tarifeler ve tüketicilerin desteklenmesi) : “Serbest tüketici niteliğini haiz olmayan tüketicilere uygulanacak perakende satış tarifeleri, görevli tedarik şirketi tarafından önerilir ve **Kurul** tarafından incelenerek onaylanır.” [1]  \n- Madde 10, fıkra (4) (Toptan ve perakende satış faaliyetleri) : “Görevli tedarik şirketi, ilgili dağıtım bölgesinde bulunan serbest tüketici olmayan tüketicilere **Kurul** tarafından onaylanan perakende satış tarifeleri üzerinden elektrik enerjisi satışı yapar.” [3]  \n\n**Kaynak Alıntıları**  \n[1]: “Serbest tüketici niteliğini haiz olmayan tüketicilere uygulanacak perakende satış tarifeleri, görevli tedarik şirketi tarafından önerilir ve Kurul tarafından incelenerek onaylanır.”  \n[3]: “Görevli tedarik şirketi, ilgili dağıtım bölgesinde bulunan serbest tüketici olmayan tüketicilere Kurul tarafından onaylanan perakende satış tarifeleri üzerinden elektrik enerjisi satışı yapar.”"
     },
     {
       "id": "q30",
       "difficulty": "kolay",
       "is_negative_test": false,
-      "best_rerank_score": 4.710168361663818,
-      "recall_hit": true
-    },
-    {
-      "id": "q31",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 9.886590957641602,
-      "recall_hit": true
-    },
-    {
-      "id": "q32",
-      "difficulty": "zor",
-      "is_negative_test": false,
-      "best_rerank_score": 0.6119521989097595,
-      "recall_hit": true
-    },
-    {
-      "id": "q33",
-      "difficulty": "zor",
-      "is_negative_test": false,
-      "best_rerank_score": 2.295607805252075,
-      "recall_hit": true
-    },
-    {
-      "id": "q34",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 0.23892581462860107,
-      "recall_hit": true
-    },
-    {
-      "id": "q35",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 2.9119598865509033,
-      "recall_hit": true
-    },
-    {
-      "id": "q36",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 2.9230244159698486,
-      "recall_hit": true
+      "best_rerank_score": 4.710170269012451,
+      "recall_hit": true,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 0,
+      "finish_reason": "stop",
+      "answer_text": "Arz güvenliğinden **Enerji ve Tabii Kaynaklar Bakanlığı** sorumludur.  \n- [1] “Ba kanlık, elektrik enerjisi arz güvenliğinin izlenmesinden ve arz güvenliğine ilişkin tedbirlerin alınmasından sorumludur.”  \n- [3] “Kurum, lisans verilen üretim tesislerinin gerçekleşmelerinin izlenmesinden … sorumludur.” (Burada “Kurum” ifadesi, 6446 Sayılı Kanun’da Bakanlık olarak tanımlanmıştır.)  \n\nKaynak Alıntıları:  \n[1]: “Ba kanlık, elektrik enerjisi arz güvenliğinin izlenmesinden ve arz güvenliğine ilişkin tedbirlerin alınmasından sorumludur.”  \n[3]: “Kurum, lisans verilen üretim tesislerinin gerçekleşmelerinin izlenmesinden, ilgili mevzuat kapsamında bu tesislerin öngörülen zamanda devreye girmesi için gerekli önlemlerin alınmasından, beş yıl içerisinde işletmeye girecek lisanslı yeni üretim kapasite miktarlarının Bakanlığa düzenli aralıklarla bildirilmesinden sorumludur.”"
     },
     {
       "id": "q37",
       "difficulty": "kolay",
       "is_negative_test": false,
       "best_rerank_score": 10.696120262145996,
-      "recall_hit": true
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 3,
+      "finish_reason": "stop",
+      "answer_text": "**Toptan ve perakende satış faaliyetleri kimler tarafından yürütülür?**  \n\n- **Üretim şirketleri ile tedarik lisansı kapsamında kamu ve özel sektör tedarik şirketleri** bu faaliyetleri yürütür.  \n  - Kaynak: [1]  \n- **Dağıtım şirketi tarafından yürütülmekte olan perakende satış faaliyeti** ise **görevli tedarik şirketi** tarafından yerine getirilir.  \n  - Kaynak: [2]  \n- **Tedarik şirketleri** herhangi bir bölge sınırlaması olmaksızın serbest tüketicilere toptan veya perakende satış faaliyetlerinde bulunabilir.  \n  - Kaynak: [3]  \n\n**Kaynak Alıntıları**  \n[1]: \"Toptan ve perakende satış faaliyetleri, üretim şirketleri ile tedarik lisansı kapsamında kamu ve özel sektör tedarik şirketleri tarafından, bu Kanun ve bu Kanuna göre çıkarılan yönetmelikler uyarınca yürütülür.\"  \n[2]: \"Dağıtım şirketi tarafından yürütülmekte olan perakende satış faaliyeti, görevli tedarik şirketi tarafından yerine getirilir.\"  \n[3]: \"Tedarik şirketleri, herhangi bir bölge sınırlaması olmaksızın serbest tüketicilere toptan veya perakende satış faaliyetlerinde bulunabilir.\""
     },
     {
       "id": "q38",
       "difficulty": "orta",
       "is_negative_test": false,
-      "best_rerank_score": 3.518435478210449,
-      "recall_hit": true
-    },
-    {
-      "id": "q39",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 2.1309430599212646,
-      "recall_hit": true
-    },
-    {
-      "id": "q40",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 6.6724419593811035,
-      "recall_hit": true
-    },
-    {
-      "id": "q41",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 1.2022615671157837,
-      "recall_hit": true
+      "best_rerank_score": 2.996249198913574,
+      "recall_hit": true,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 0,
+      "finish_reason": "stop",
+      "answer_text": "EPİAŞ, 6446 Sayılı Elektrik Piyasası Kanunu’na göre, **piyasa işletim faaliyeti** yürütmek amacıyla kurulmuştur.  \nKuruluşun temel amacı, **organize toptan elektrik piyasalarının işletilmesi** ve **uluslararası elektrik piyasalarına taraf olarak katılmak** için gerekli altyapıyı sağlamaktır.  \n\nKuruluş süreci ise şu şekilde düzenlenmiştir:  \n- Kanunun yürürlüğe girdiği tarihten itibaren **altı ay** içinde, **Kurum** tarafından çıkarılacak yönetmelikle EPİAŞ’ın teşkilat yapısı ve çalışma esasları belirlenir.  \n- EPİAŞ’ın kurulmasından itibaren **altı ay** içinde, **Kurum**dan piyasa işletim lisansı alınarak piyasa işletim faaliyetleri başlatılır.  \n- Ayrıca, **Bakanlık** tarafından uygun görülmesi hâlinde, EPİAŞ **organize toptan elektrik piyasalarının işletilmesi amacıyla oluşturulan** veya **ileride oluşturulabilecek uluslararası elektrik piyasalarına taraf olarak katılmak** için kurulan uluslararası elektrik piyasası işletmecisi kuruluşlara ortak veya üye olabilir.  \n\nKaynaklar  \n[1]: “EPİAŞ, kurulmasından itibaren altı ay içerisinde Kurumdan gerekli piyasa işletim lisansını alarak piyasa işletim faaliyetlerini yürütmeye başlar.”  \n[2]: “Bakanlıkça uygun görülmesi hâlinde; görev alanına giren organize toptan elektrik piyasalarının işletilmesi amacıyla oluşturulan veya ileride oluşturulabilecek uluslararası elektrik piyasalarına taraf olarak katılmak, bu amaçla kurulan uluslararası elektrik piyasası işletmecisi kuruluşlara ortak veya üye olmak.”  \n[3]: “EPİAŞ’ın teşkilat yapısı ile çalışma esasları, bu Kanunun yürürlüğe girdiği tarihten itibaren altı ay içerisinde Kurum tarafından çıkarılacak yönetmelikle düzenlenir.”"
     },
     {
       "id": "q42",
       "difficulty": "orta",
       "is_negative_test": false,
-      "best_rerank_score": 1.0811691284179688,
-      "recall_hit": true
-    },
-    {
-      "id": "q43",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 9.352221488952637,
-      "recall_hit": true
-    },
-    {
-      "id": "q44",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 6.3117780685424805,
-      "recall_hit": true
-    },
-    {
-      "id": "q45",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 2.1335349082946777,
-      "recall_hit": true
-    },
-    {
-      "id": "q46",
-      "difficulty": "kolay",
-      "is_negative_test": false,
-      "best_rerank_score": 4.6587700843811035,
-      "recall_hit": true
-    },
-    {
-      "id": "q47",
-      "difficulty": "orta",
-      "is_negative_test": false,
-      "best_rerank_score": 7.336750507354736,
-      "recall_hit": true
-    },
-    {
-      "id": "q48",
-      "difficulty": "zor",
-      "is_negative_test": false,
-      "best_rerank_score": 7.8045125007629395,
-      "recall_hit": true
+      "best_rerank_score": 1.6299453973770142,
+      "recall_hit": true,
+      "guard_low_confidence": false,
+      "ungrounded_citation_count": 0,
+      "total_citation_count": 5,
+      "finish_reason": "stop",
+      "answer_text": "**Dağıtım sisteminden ayrılma hangi şartlara bağlıdır?**  \n\n1. **Bağlantı anlaşmasının devamı**  \n   - Bağlantı anlaşmasında yer alan adresteki dağıtım sistemine bağlı tesis ve teçhizat var olduğu sürece, bağlantı anlaşması yürürlükte kalır ve bu tesisteki kullanıcı değişikliği halinde yeni bir bağlantı anlaşması yapılması talep edilmez.  \n   - Kullanıcının dağıtım sistemine bağlı tesis ve teçhizatını sistemden ayırma ve dağıtım sistemini kullanımını sona erdirme hakkı saklıdır.  \n   [2], [3]  \n\n2. **Bildirim süreleri**  \n   - Kullanıcı, dağıtım sistemine bağlı tesis ve teçhizatını sistemden ayırmak istediğinde en az **dört ay**, dağıtım sistemi kullanımını sona erdirmek istediğinde ise en az **iki ay** önceden dağıtım şirketine yazılı bildirimde bulunur.  \n   - Bu hüküm, elektrik enerjisi veya kapasitesi tedarik ettiği tüketiciler adına sistem kullanım anlaşması imzalayan tedarikçilerle bu amaçla imzalanan sistem kullanım anlaşmalarına uygulanmaz.  \n   [4], [5]  \n\n3. **Süre konusunda anlaşmazlık**  \n   - Dağıtım şirketi ile kullanıcı, farklı bir sürenin uygulanması için mutabık kalmadıkları takdirde, sistemle bağlantının fiziki olarak kesilmesini takip eden **dört ay** içerisinde birbirlerinin arazisinde bulunan varlıklarını kaldırır.  \n   [6], [7]  \n\n---\n\n### Kaynak Alıntıları  \n[2]: \"Bağlantı anlaşmasında yer alan adresteki dağıtım sistemine bağlı tesis ve teçhizat var olduğu sürece, bağlantı anlaşması yürürlükte kalır ve bu tesisteki kullanıcı değişikliği halinde yeni bir bağlantı anlaşması yapılması talep edilmez.\"  \n[3]: \"Kullanıcının dağıtım sistemine bağlı tesis ve teçhizatını sistemden ayırma ve dağıtım sistemini kullanımını sona erdirme hakkı saklıdır.\"  \n[4]: \"Kullanıcı, dağıtım sistemine bağlı tesis ve teçhizatını sistemden ayırmak istediğinde en az dört ay, dağıtım sistemi kullanımını sona erdirmek istediğinde ise en az iki ay önceden dağıtım şirketine yazılı bildirimde bulunur.\"  \n[5]: \"Bu hüküm, elektrik enerjisi veya kapasitesi tedarik ettiği tüketiciler adına sistem kullanım anlaşması imzalayan tedarikçilerle bu amaçla imzalanan sistem kullanım anlaşmalarına uygulanmaz.\"  \n[6]: \"Dağıtım şirketi ile kullanıcı, farklı bir sürenin uygulanması için mutabık kalmadıkları takdirde, sistemle bağlantının fiziki olarak kesilmesini takip eden dört ay içerisinde birbirlerinin arazisinde bulunan varlıklarını kaldırır.\""
     },
     {
       "id": "q49",
       "difficulty": "zor",
       "is_negative_test": true,
-      "best_rerank_score": 2.03924822807312,
-      "correct_low_confidence": false
+      "best_rerank_score": 2.0392470359802246,
+      "correct_low_confidence": false,
+      "guard_low_confidence": true,
+      "ungrounded_citation_count": 3,
+      "total_citation_count": 8,
+      "finish_reason": "stop",
+      "answer_text": "Elektrikli araç şarj istasyonu işletmecisinin araç park ihlali cezalarından sorumluluğu, verilen kaynak pasajlarında belirtilmemiştir. Kaynaklarda yalnızca şarj hizmeti, lisanslama, şarj istasyonu kurma zorunluluğu, tedarikçi yükümlülükleri ve tüketici hakları gibi konular ele alınmıştır; araç park ihlaliyle ilgili herhangi bir hüküm, kural veya sorumluluk ifadesi bulunmamaktadır. Bu nedenle, mevcut kaynaklara dayanarak şarj istasyonu işletmecisinin araç park ihlali cezalarından sorumlu olup olmadığı konusunda bilgi verilemez.  \n\nKaynak Alıntıları:  \n[1]: \"Şarj hizmeti, Kurum tarafından ticari amaçlı olmamak üzere belirlenen istisnalar dışında, şarj ağı işletmeci lisansı kapsamında bu Kanun ve bu Kanuna göre çıkarılan yönetmelikler uyarınca yürütülür.\"  \n[2]: \"Şarj hizmeti, Kurum tarafından ticari amaçlı olmamak üzere belirlenen istisnalar dışında, şarj ağı işletmeci lisansı kapsamında bu Kanun ve bu Kanuna göre çıkarılan yönetmelikler uyarınca yürütülür.\"  \n[3]: \"Şarj Ağı İşletmecisi: Elektrikli araç kullanıcılarına, şarj ağına erişim açarak şarj hizmeti sağlayan ve şarj ağının işletmesini gerçekleştiren lisans sahibi tüzel kişiyi,\"  \n[4]: \"Şarj istasyonu kurma zorunluluğu getirilen hallerde, şarj ağı işletmecisi lisans sahibi özel hukuk tüzel kişilerin lisanslarına konu şarj hizmeti faaliyetlerine ilişkin taşınmaz temini işlemlerini 19 uncu maddenin birinci, üçüncü ve beşinci fıkraları kapsamında yürütür.\"  \n[5]: \"f) İfşa: Tedarikçiler tarafından tüketicilere tedarik edilen elektrik enerjisinin, şarj ağı işletmecileri tarafından şarj hizmetine konu elektrik enerjisinin belirli bir miktar veya oranının yenilenebilir enerji kaynaklarından üretildiğinin ve YEK-G belgesi vasıtasıyla belgelendirildiğinin, fatura ve/veya başka bir bildirim aracı ile açıklanmasını...\"  \n[6]: \"Şarj hizmetinden faydalanan elektrikli araç kullanıcılarının hak ve yükümlülüklerine ilişkin hususları belirler.\"  \n[7]: \"Alışveriş merkezleri, soğuk hava depoları ve araç şarj istasyonları için 12 saat,\"  \n[8]: \"Şarj ağı işletmeci lisansı için, lisans verme şartları, lisans süresi, tadili, bedeli, sona erdirilmesi, iptali, lisansta yer alacak hususlar, lisans ile kazanılan hak ve üstlenilen yükümlülükler, lisans kapsamındaki faaliyetlerin kısıtlanması, lisansın verilmesine ve lisans faaliyetinin yürütülmesine ilişkin olarak sayısal sınırlamalar, şarj istasyonlarının yaygınlığı dikkate alınarak istasyon kurma zorunluluğu da dahil olmak üzere ticari ve teknik zorunluluklar dahil özel şartlar belirleyebilir.\""
     }
   ]
 }
