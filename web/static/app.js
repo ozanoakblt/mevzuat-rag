@@ -348,6 +348,11 @@ function appendQaBlock(question) {
 
 async function askQuestion(question) {
   stageEl.classList.add("chat-active");
+  // "generating" class'i 3 panelde de (sol rail/orta stage/sag kaynakca)
+  // senkronize ambiyans glow animasyonunu tetikler (bkz. style.css
+  // "Uretim ambiyans efekti" bolumu) - cevap uretimi bitince (basarili ya
+  // da hatali fark etmez, finally'de) mutlaka kaldirilir.
+  document.body.classList.add("generating");
 
   const block = appendQaBlock(question);
   inputEl.value = "";
@@ -373,6 +378,7 @@ async function askQuestion(question) {
     block.querySelector(".answer-block").innerHTML = `
       <div class="warning-line">HATA: ${escapeHtml(err.message || String(err))}</div>`;
   } finally {
+    document.body.classList.remove("generating");
     submitEl.disabled = false;
     inputEl.focus();
   }

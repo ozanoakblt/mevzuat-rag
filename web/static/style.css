@@ -790,3 +790,70 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .skeleton-line { animation: none; }
 }
+
+/* ============================================================
+   Uretim (generating) ambiyans efekti — cevap uretilirken JS
+   <body> etiketine "generating" class'i ekliyor (bkz. app.js
+   askQuestion). Ilk versiyon (sert siyah daire + keskin elips kenari)
+   "rezalet" bulundu - kullanicinin referans verdigi Gemini "thinking"
+   efekti gibi YUMUSAK, BULANIKLASTIRILMIS (blur), birden fazla renk
+   tonunun yavasca SURUKLENDIGI (drift) bir ambiyansa gore yeniden
+   tasarlandi. Sert geometrik sinirlar yok - buyuk bir blur yariçapi
+   (60px) ve genis renk gecisleri butun keskin kenarlari eritiyor.
+   Her 3 panelde (sol rail, orta stage, sag kaynakca) ayni animasyon,
+   hafif faz farkiyla (staggered delay) oynuyor - "hareket etsin"
+   istegi boylece tek bir blob'un degil, panelden panele akan YAVAS
+   bir dalganin hissini veriyor. */
+.left-rail, .stage, .source-panel {
+  position: relative;
+  isolation: isolate;
+}
+.left-rail > *, .stage > *, .source-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.left-rail::before,
+.stage::before,
+.source-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 30% 35%, rgba(91, 157, 255, 0.55) 0%, transparent 42%),
+    radial-gradient(circle at 70% 65%, rgba(150, 120, 255, 0.42) 0%, transparent 46%),
+    radial-gradient(circle at 50% 50%, rgba(80, 200, 255, 0.28) 0%, transparent 55%);
+  filter: blur(48px) saturate(130%);
+  transform: scale(1) translate(0, 0);
+  transition: opacity 0.7s ease;
+  will-change: transform, opacity, filter;
+}
+
+body.generating .left-rail::before,
+body.generating .stage::before,
+body.generating .source-panel::before {
+  opacity: 0.85;
+  animation: ambient-drift 7s ease-in-out infinite;
+}
+body.generating .left-rail::before { animation-delay: 0.5s; }
+body.generating .source-panel::before { animation-delay: 1s; }
+
+@keyframes ambient-drift {
+  0%   { transform: scale(0.9) translate(-6%, 2%); }
+  25%  { transform: scale(1.08) translate(5%, -5%); }
+  50%  { transform: scale(0.95) translate(8%, 4%); }
+  75%  { transform: scale(1.1) translate(-4%, -3%); }
+  100% { transform: scale(0.9) translate(-6%, 2%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.generating .left-rail::before,
+  body.generating .stage::before,
+  body.generating .source-panel::before {
+    animation: none;
+    opacity: 0.5;
+  }
+}
