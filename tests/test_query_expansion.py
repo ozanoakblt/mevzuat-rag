@@ -116,6 +116,30 @@ def test_expand_query_backward_compatible_with_legacy_list_format():
     mock_llm.assert_not_called()
 
 
+def test_expand_query_does_not_reuse_cache_for_different_dates_despite_high_similarity():
+    # Gercek bir vakada tespit edildi: "X tarihli degisiklikle Y
+    # Yonetmeliginde ne degisti?" kalibindaki iki soru, FARKLI tarihli iki
+    # AYRI degisiklik hakkinda olsa bile 0.93 esiginin UZERINDE anlamsal
+    # benzerlik verebiliyor - tarih iceren sorularda bu ayrimin gozden
+    # kacmamasi gerekir.
+    fake_response_1 = {"queries": ["25.06.2026 degisikligi hakkinda s1", "s2", "s3"]}
+    fake_response_2 = {"queries": ["27.01.2026 degisikligi hakkinda s1", "s2", "s3"]}
+    vectors = {
+        "25.06.2026 tarihli degisiklikle Yonetmelikte ne degisti?": [1.0, 0.0],
+        "27.01.2026 tarihli degisiklikle Yonetmelikte ne degisti?": [0.999, 0.045],
+    }
+    with patch(
+        "src.retrieval.query_expansion.chat_completion_json",
+        side_effect=[fake_response_1, fake_response_2],
+    ) as mock_llm:
+        first = expand_query("25.06.2026 tarihli degisiklikle Yonetmelikte ne degisti?", embedder=FakeEmbedder(vectors))
+        second = expand_query("27.01.2026 tarihli degisiklikle Yonetmelikte ne degisti?", embedder=FakeEmbedder(vectors))
+    assert mock_llm.call_count == 2
+    assert first != second
+    assert "25.06.2026" in first[0]
+    assert "27.01.2026" in second[0]
+
+
 def test_expand_query_embedder_failure_falls_back_to_llm():
     class BrokenEmbedder:
         def embed_query(self, text):

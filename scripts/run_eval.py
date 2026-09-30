@@ -37,6 +37,8 @@ from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.hybrid import hybrid_search
 from src.retrieval.query_expansion import expand_query
+import time
+
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -47,6 +49,15 @@ RESULTS_PATH = ROOT / "eval" / "results.json"
 
 CANDIDATE_POOL_SIZE = 30
 FINAL_TOP_K = 8
+# guard_pool round-robin derinligi: her alt-sorgudan ilk N sonuc guard_pool'a
+# girer. reranker.rerank_with_safety_net artik APPEND semantigine sahip
+# (bkz. reranker.py) - yani guard_pool buyuk olsa bile gercek sonuclari
+# SILMIYOR, sadece eksik olanlari sona ekliyor. Bu yuzden derinligi
+# BUYUTMENIN artik recall acisindan hicbir riski yok (52 soruluk retrieval-
+# only sweep: derinlik 1 -> recall %87.0, derinlik 8 -> %95.65, derinlik
+# 13 -> ayni %95.65 - 8'de plato). 8 secildi: 13 ile ayni recall'i verirken
+# ortalama daha az gereksiz ek pasaj tasiyor (context/token israfi daha az).
+GUARD_ROUND_ROBIN_DEPTH = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 
 
@@ -68,9 +79,23 @@ def _check_recall(reranked: list[dict], question: dict) -> bool:
     return False
 
 
+def _find_rank(reranked: list[dict], question: dict) -> int | None:
+    """Dogru maddenin reranked listesindeki 1-tabanli konumunu doner (MRR icin)."""
+    expected_docs = set(question["expected_documents"])
+    expected_articles = {_normalize_article(a) for a in question["expected_articles"]}
+    if not expected_docs:
+        return None
+    for i, chunk in enumerate(reranked, 1):
+        if chunk["doc_id"] in expected_docs:
+            if (chunk.get("madde_kind"), chunk.get("madde_no")) in expected_articles:
+                return i
+    return None
+
+
 def run_single_question(
     question: dict, embedder, vector_store, bm25_index, reranker, with_generation: bool
 ) -> dict:
+    retrieval_start = time.perf_counter()
     q_text = question["question"]
     sub_queries = expand_query(q_text, embedder=embedder)
     candidates_by_id: dict[str, dict] = {}
@@ -83,14 +108,27 @@ def run_single_question(
             if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
                 candidates_by_id[cid] = r
 
+    # Round-robin guard_pool: her alt-sorgunun EN IYI sonucunu (rank 1) once
+    # ekleyerek, hicbir alt-sorgunun kendi ust siralarini tek basina one
+    # gecirip digerlerini bogmasini onluyoruz (bu round-robin fikri
+    # kasitli - bkz. web/app.py'deki ayni mantigin yorumu, gercek bir
+    # subquery-acligi vakasinda eklendi). ONCEKI SURUM derinligi 13'e
+    # kadar cikarmisti (3 alt-sorgu x 13 = 30+ chunk'a kadar guard_pool) -
+    # bu, final-8 listesinin cogunu (gercek vakada 5-7/8 slotu) reranker
+    # skoruna bakilmaksizin "kurtarilmis" doldurma ile eziyor, gercekten
+    # iyi siralanmis adaylari disari itiyordu (bkz. q14/q16 recall-miss
+    # teshisi). Derinlik 1'e indirildi: guard_top_n=3'un (reranker.py'nin
+    # kendi varsayilan tasarim niyeti) ruhuna sadik - her alt-sorgudan
+    # sadece EN IYI sonuc garanti ediliyor, kuyruk tikanikligi onleniyor
+    # ama guard_pool artik final listeyi domine edecek kadar buyumuyor.
     guard_ids: list[str] = []
-    max_len = max((len(r) for r in per_query_results), default=0)
-    for i in range(min(max_len, 13)):
+    for i in range(GUARD_ROUND_ROBIN_DEPTH):
         for sq_results in per_query_results:
             if i < len(sq_results):
                 cid = sq_results[i]["chunk_id"]
                 if cid not in guard_ids:
                     guard_ids.append(cid)
+
     candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
     guard_pool = [candidates_by_id[cid] for cid in guard_ids]
     reranked = reranker.rerank_with_safety_net(
@@ -114,6 +152,8 @@ def run_single_question(
             reranked = reranked + extra_ek_chunks
             existing_ids.update(c["chunk_id"] for c in extra_ek_chunks)
 
+    retrieval_latency = time.perf_counter() - retrieval_start
+
     is_negative_test = not question["expected_documents"]
     best_score = max((c["rerank_score"] for c in reranked), default=None)
 
@@ -122,6 +162,7 @@ def run_single_question(
         "difficulty": question["difficulty"],
         "is_negative_test": is_negative_test,
         "best_rerank_score": best_score,
+        "retrieval_latency_seconds": round(retrieval_latency, 3),
     }
 
     if is_negative_test:
@@ -131,11 +172,14 @@ def run_single_question(
         )
     else:
         result["recall_hit"] = _check_recall(reranked, question)
+        result["recall_rank"] = _find_rank(reranked, question)
 
     if with_generation:
+        generation_start = time.perf_counter()
         answer, finish_reason = generate_answer(
             q_text, reranked, doc_titles=DOC_TITLES, return_finish_reason=True
         )
+        result["generation_latency_seconds"] = round(time.perf_counter() - generation_start, 3)
         guard = run_guard(answer, reranked)
         result["guard_low_confidence"] = guard.is_low_confidence
         result["ungrounded_citation_count"] = sum(
@@ -162,15 +206,48 @@ def summarize(results: list[dict]) -> dict:
             if subset:
                 sub_hits = sum(1 for r in subset if r["recall_hit"])
                 summary[f"recall_at_5_{diff}"] = sub_hits / len(subset)
+        reciprocal_ranks = [
+            (1.0 / r["recall_rank"]) if r.get("recall_rank") else 0.0
+            for r in positive
+        ]
+        summary["mrr"] = sum(reciprocal_ranks) / len(reciprocal_ranks)
+
+    retrieval_latencies = [
+        r["retrieval_latency_seconds"] for r in results if "retrieval_latency_seconds" in r
+    ]
+    if retrieval_latencies:
+        summary["avg_retrieval_latency_seconds"] = round(
+            sum(retrieval_latencies) / len(retrieval_latencies), 3
+        )
+    generation_latencies = [
+        r["generation_latency_seconds"] for r in results if "generation_latency_seconds" in r
+    ]
+    if generation_latencies:
+        summary["avg_generation_latency_seconds"] = round(
+            sum(generation_latencies) / len(generation_latencies), 3
+        )
 
     if negative:
-        correct = sum(1 for r in negative if r["correct_low_confidence"])
+        # --with-generation calistiysa gercek uretim davranisini (guard_low_confidence)
+        # kullan; sadece retrieval skoruna (correct_low_confidence) bakmak yaniltici -
+        # konuyla yuzeysel alakali ama cevabi olmayan sorularda retrieval skoru pozitif
+        # cikabiliyor, oysa model dogru sekilde "bulamadim" diyebiliyor (bkz. q49/q51).
+        def _negative_success(r: dict) -> bool:
+            if "guard_low_confidence" in r:
+                return r["guard_low_confidence"]
+            return r["correct_low_confidence"]
+
+        correct = sum(1 for r in negative if _negative_success(r))
         summary["negative_test_success_rate"] = correct / len(negative)
         summary["negative_test_count"] = len(negative)
 
-    if results and "total_citation_count" in results[0]:
-        total_citations = sum(r["total_citation_count"] for r in results)
-        ungrounded = sum(r["ungrounded_citation_count"] for r in results)
+    # results[0]'a bakmak yeterli degil: --ids ile kismi (bazen --with-generation'siz)
+    # calistirmalar sonucunda results.json'da total_citation_count'u olan/olmayan
+    # kayitlar bir arada bulunabilir - sadece bu alana sahip kayitlari say.
+    with_citations = [r for r in results if "total_citation_count" in r]
+    if with_citations:
+        total_citations = sum(r["total_citation_count"] for r in with_citations)
+        ungrounded = sum(r["ungrounded_citation_count"] for r in with_citations)
         summary["citation_groundedness_rate"] = (
             1.0 - (ungrounded / total_citations) if total_citations else None
         )
@@ -326,7 +403,10 @@ def main() -> None:
     print(f"\n{'=' * 60}\nÖZET\n{'=' * 60}")
     for key, value in summary.items():
         if isinstance(value, float):
-            print(f"  {key}: {value:.2%}")
+            if "latency" in key:
+                print(f"  {key}: {value:.3f}s")
+            else:
+                print(f"  {key}: {value:.2%}")
         else:
             print(f"  {key}: {value}")
 

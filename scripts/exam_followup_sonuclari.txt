@@ -1,0 +1,59 @@
+======================================================================
+[Q40-celiski]
+SORU: Teknik kaliteyi bozan unsurlarin (genel) giderilmesi icin verilen sure ile harmonik bozulmaya neden olan kullaniciya verilen duzeltme suresi ayni hukum mudur, yoksa farkli maddeler mi? Ikisini ayri ayri, madde numaralariyla birlikte aciklayin.
+----------------------------------------------------------------------
+Teknik kaliteyi bozan unsurların giderilmesi için verilen süreler, aynı madde (Madde 14) içinde farklı fıkralarda yer almaktadır.  
+
+- **Madde 14, fıkra (2)** – “Teknik kalitenin korunması” kapsamında, teknik kaliteyi bozan unsurları tespit eden dağıtım şirketi, **AG kullanıcılar için 90 gün** ve **OG kullanıcılar için 180 gün** süre tanıyarak bildirimde bulunur. [1]  
+- **Madde 14, fıkra (3)** – Aynı madde içinde, verilen sürenin sonunda unsurları gideremeyen kullanıcıların faturasına **AG kullanıcılar için aylık 50 TL**, **OG kullanıcılar için aylık 100 TL** ilave edilir. Bu uygulama **AG kullanıcılar için 3 ay**, **OG kullanıcılar için 6 ay** geçemez. [2]  
+
+Dolayısıyla, teknik kaliteyi bozan unsurların giderilmesi için verilen süreler aynı madde (Madde 14) içinde farklı fıkralarda belirtilmiştir; fıkra (2) süreyi, fıkra (3) ise süre sonunda uygulanacak yaptırımları ve süre sınırlarını düzenler.  
+
+Kaynak Alıntıları:  
+[1]: “Dağıtım şirketi, teknik kaliteyi bozan unsurların giderilmesi için AG kullanıcılara 90 (doksan) gün ve OG kullanıcılara 180 (yüz seksen) gün süre tanıyarak bildirimde bulunur.”  
+[2]: “Verilen sürenin sonunda, teknik kaliteyi bozan unsurları gidermeyen kullanıcıların faturasına, teknik kaliteyi bozan unsurları giderene kadar AG kullanıcılar için aylık 50 (elli) TL, OG kullanıcılar için aylık 100 TL ilave edilir. Bu uygulama AG kullanıcılar için 3 (üç) ayı, OG kullanıcılar için 6 (altı) ayı geçemez.”
+----------------------------------------------------------------------
+UYARI - DUSUK GUVEN: Bulunan kaynaklar bu soruyla zayif iliskili gorunuyor. Bu cevabi temkinli degerlendirin, resmi metni mutlaka kontrol edin.
+
+======================================================================
+[Q33-guncellik]
+SORU: Elektrik dagitim sisteminden kaynaklanan kalite sorunu nedeniyle cihazi zarar goren kullanicinin dagitim sirketine basvuru suresi kac gundur? Farkli yonetmeliklerde farkli sureler (30 gun, 10 is gunu) geciyorsa, hangisi GUNCEL ve YURURLUKTE olan hukumdur, hangisi mulga/eski?
+----------------------------------------------------------------------
+Verilen kaynak pasajlarda, “Elektrik dağıtım sisteminden kaynaklanan kalite sorunu nedeniyle cihazı hasar gören kullanıcının dağıtım şirketine başvuru süresi” ile ilgili doğrudan bir süre (örneğin 30 gün, 10 iş günü vb.) belirtilmemiştir.  
+
+Kaynaklar yalnızca genel kalite raporu, kullanıcı cihaz hasarı tablosu, kesinti kaynağı ve sebebi, lisanslama yükümlülükleri, yürürlük tarihleri ve sayaç okuma bildirimleri gibi konuları ele almaktadır; başvuru süresiyle ilgili hüküm içermez.  
+
+Dolayısıyla, “hangi hüküm güncel ve yürürlükte, hangisi eski” sorusuna cevap verecek bilgi mevcut değildir.  
+
+Kaynak Alıntıları:  
+[1]: “Genel kalite raporunun içerisinde elektrik dağıtım sisteminden kaynaklanan kalite sorunları nedeniyle kullanıcı teçhizatında oluşan hasara ilişkin Kullanıcı Cihaz Hasarı Tablosuna da (Tablo 6 -B) yer verilir.”
+----------------------------------------------------------------------
+UYARI - DUSUK GUVEN: Bulunan kaynaklar bu soruyla zayif iliskili gorunuyor. Bu cevabi temkinli degerlendirin, resmi metni mutlaka kontrol edin.
+UYARI - DOGRULANAMAYAN SAYI: cevapta gecen 30 degeri/degerleri kaynak pasajlarda bulunamadi. Bu rakam(lar)i resmi metinle ayrica dogrulayin.
+
+======================================================================
+[Q15-16-bedel]
+SORU: 2026 yilinda S sinifi ve A sinifi teknik kalite olcumunun AG ve OG seviyesindeki guncel TL bedelleri nedir? Kurul karariyla belirlenen guncel tarife degerlerini arayin.
+----------------------------------------------------------------------
+Verilen kaynak pasajlarda 2026 yılına ait S sınıfı ve A sınıfı teknik kalite ölçüm bedelleri veya Kurul kararıyla belirlenen güncel tarifeler hakkında bilgi bulunmamaktadır. Bu nedenle sorunuzun cevabını kaynaklardan elde edemiyorum.  
+
+Kaynak Alıntıları:  
+[1]: "Dağıtım şirketleri maliyet unsurlarını dikkate alarak kullanıcılara sunulacak teknik kalite ölçüm hizmetine ilişkin bedelleri, AG ve OG seviyede kullanılacak A sınıfı ve S sınıfı cihazlar için tespit ederek, bu Usul ve Esasların yürürlük tarihinden itibaren 30 gün içerisinde Kuruma önerir. Teknik kalite ölçüm hizmetine ilişkin bedeller Kurul tarafından belirlenir."
+----------------------------------------------------------------------
+UYARI - DUSUK GUVEN: Bulunan kaynaklar bu soruyla zayif iliskili gorunuyor. Bu cevabi temkinli degerlendirin, resmi metni mutlaka kontrol edin.
+UYARI - DOGRULANAMAYAN SAYI: cevapta gecen 2026 degeri/degerleri kaynak pasajlarda bulunamadi. Bu rakam(lar)i resmi metinle ayrica dogrulayin.
+
+======================================================================
+[Q5-serbest-tuketici-limiti]
+SORU: 2026 yili icin serbest tuketici limiti kac kWh/yildir? Bu limit Akilli Sayac PRO icin kullanilan 10 MWh limitiyle ayni midir?
+----------------------------------------------------------------------
+Verilen kaynak pasajlarda 2026 yılı için serbest tüketici limiti belirtilmemiştir. Dolayısıyla bu konuda yeterli bilgi bulamadım.  
+
+Kaynaklar sadece 100 000 kWh’ı referans alıyor; Akıllı Sayac PRO için kullanılan 10 MWh (10 000 kWh) limitiyle ilgili bir karşılaştırma yapılacak bilgi de mevcut değil.  
+
+Kaynak Alıntıları:  
+[1]: "Yıllık tüketimi 100.000 kWh’ın altında olan serbest tüketici"  
+[4]: "Aynı gerçek veya tüzel kişinin aynı tüketici grubunda bulunan kullanım yerlerinin yıllık toplam elektrik enerjisi tüketim miktarının sözleşmenin kurulduğu tarihte 100.000 kWh ve üzerinde olması"
+----------------------------------------------------------------------
+UYARI - DUSUK GUVEN: Bulunan kaynaklar bu soruyla zayif iliskili gorunuyor. Bu cevabi temkinli degerlendirin, resmi metni mutlaka kontrol edin.
+UYARI - DOGRULANAMAYAN SAYI: cevapta gecen 2026 degeri/degerleri kaynak pasajlarda bulunamadi. Bu rakam(lar)i resmi metinle ayrica dogrulayin.

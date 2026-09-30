@@ -309,11 +309,16 @@
     {
       "id": "q25",
       "question": "Topraklama ve izolasyon uygunluğuna ilişkin teknik şartlar bu belgelerde nasıl düzenleniyor?",
-      "expected_documents": [],
-      "expected_articles": [],
+      "expected_documents": [
+        "yonetmelik-sebeke"
+      ],
+      "expected_articles": [
+        "MADDE 6",
+        "MADDE 17"
+      ],
       "difficulty": "zor",
       "scenario_tag": "topraklama_izolasyon",
-      "notes": "KASITLI KAPSAM DIŞI TEST: topraklama/izolasyon teknik standartları ayrı bir mevzuatta (örn. Elektrik Tesislerinde Topraklamalar Yönetmeliği), bizim 4 belgede kapsam dışı. Sistem uydurmamalı."
+      "notes": "GUNCELLEME (2026-09-16): Bu soru baslangicta (korpus 4 belgeyken) KASITLI KAPSAM DISI test olarak tasarlanmisti (topraklama/izolasyon ayri bir mevzuatta varsayilmisti). Korpus 628 kaynaga buyudukten sonra Elektrik Sebeke Yonetmeligi (yonetmelik-sebeke) eklendi; bu yonetmeligin Madde 6 ve Madde 17 fikralari iletim sistemine baglanti icin topraklama ve izolasyon (IEC-815 kirlilik seviyesi III, mm/kV ark surunme mesafesi, 400kV/154kV izolasyon seviyeleri) teknik sartlarini gercekten duzenliyor - dogrulandi, alintilar tam grounded. Model dogru davrandi (uydurmadi), test artik GECERSIZ bir negatif test - pozitif teste cevrildi. NOT: cevap sadece baglanti-baglaminda (Sebeke Yonetmeligi) topraklamayi kapsiyor; daha genel tum-tesisler topraklama sorusu (orn. ayri bir ETKB yonetmeligi) icin ayrica kapsam netligi denetlenebilir, ama bu ayri/kucuk bir konu."
     },
     {
       "id": "q26",

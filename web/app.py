@@ -53,6 +53,10 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 CANDIDATE_POOL_SIZE = 30
 FINAL_TOP_K = 8
+# bkz. scripts/run_eval.py'deki GUARD_ROUND_ROBIN_DEPTH yorumu - ayni
+# deger, eval ve canli sunum yolunun ayni davranisi vermesi icin senkron
+# tutuluyor (bkz. scripts/sync_eval_retrieval_logic.py gecmisi).
+GUARD_ROUND_ROBIN_DEPTH = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 
 # --- Bileşenler: sunucu başlarken bir kez yüklenir ---
@@ -134,16 +138,19 @@ def ask(req: AskRequest) -> AskResponse:
             if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
                 candidates_by_id[cid] = r
 
-    # Round-robin (nobetlese) oncelik: her alt-sorunun ayni siradaki
-    # sonucunu once ekleyerek, hicbir alt-sorunun kendi ust siralarini
-    # (orn. ilk 13'unu) tek basina one gecirip diger alt-sorularin
-    # gercekten alakali ama daha az bilinen sonuclarini "kuyrukta"
-    # boguntmasini onluyoruz (gercek vakada tespit edildi: subquery1'in
-    # top-13'u guard_pool'un basini kapatinca, subquery3'un cok daha
-    # alakali bir sonucu final listeye hic giremiyordu).
+    # Round-robin (nobetlese) oncelik: her alt-sorunun ilk GUARD_ROUND_ROBIN_DEPTH
+    # sonucunu once ekleyerek, hicbir alt-sorunun kendi ust siralarini tek
+    # basina one gecirip diger alt-sorularin gercekten alakali ama daha az
+    # bilinen sonuclarini "kuyrukta" boguntmasini onluyoruz (gercek vakada
+    # tespit edildi: subquery1'in top-N'i guard_pool'un basini kapatinca,
+    # subquery3'un cok daha alakali bir sonucu final listeye hic giremiyordu).
+    # reranker.rerank_with_safety_net artik APPEND semantigine sahip (gercek
+    # sonuclari SILMIYOR, sadece eksik olanlari sona ekliyor) - bu yuzden
+    # derinligi buyutmenin recall acisindan riski yok (52 soruluk retrieval-
+    # only sweep: derinlik 1 -> recall %87.0, derinlik 8 -> %95.65, 13'e
+    # cikmanin ek faydasi yok - 8'de plato).
     guard_ids: list[str] = []
-    max_len = max((len(r) for r in per_query_results), default=0)
-    for i in range(min(max_len, 13)):
+    for i in range(GUARD_ROUND_ROBIN_DEPTH):
         for sq_results in per_query_results:
             if i < len(sq_results):
                 cid = sq_results[i]["chunk_id"]

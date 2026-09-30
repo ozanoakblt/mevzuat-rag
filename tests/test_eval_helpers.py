@@ -93,6 +93,28 @@ def test_summarize_negative_test_success_rate():
     assert summary["negative_test_count"] == 2
 
 
+def test_summarize_negative_test_prefers_guard_low_confidence_over_retrieval_score():
+    # --with-generation ile calistiginda, retrieval skoru (correct_low_confidence)
+    # yaniltici olsa bile gercek uretim davranisi (guard_low_confidence) esas alinmali.
+    results = [
+        # retrieval skoru "basarisiz" diyor ama model gercekte dogru sekilde reddetti
+        {
+            "is_negative_test": True,
+            "correct_low_confidence": False,
+            "guard_low_confidence": True,
+        },
+        # retrieval skoru "basarili" diyor ama model gercekte tam bir cevap uretti
+        {
+            "is_negative_test": True,
+            "correct_low_confidence": True,
+            "guard_low_confidence": False,
+        },
+    ]
+    summary = run_eval.summarize(results)
+    assert summary["negative_test_success_rate"] == 0.5
+    assert summary["negative_test_count"] == 2
+
+
 def test_summarize_citation_groundedness_when_generation_included():
     results = [
         {
@@ -105,3 +127,68 @@ def test_summarize_citation_groundedness_when_generation_included():
     ]
     summary = run_eval.summarize(results)
     assert summary["citation_groundedness_rate"] == 0.75
+
+
+def test_summarize_citation_groundedness_skips_records_without_generation():
+    results = [
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True},
+        {
+            "is_negative_test": False,
+            "difficulty": "kolay",
+            "recall_hit": True,
+            "total_citation_count": 4,
+            "ungrounded_citation_count": 1,
+        },
+    ]
+    summary = run_eval.summarize(results)
+    assert summary["citation_groundedness_rate"] == 0.75
+
+
+def test_find_rank_returns_position_when_first():
+    reranked = [{"doc_id": "doc1", "madde_kind": "MADDE", "madde_no": "9"}]
+    assert run_eval._find_rank(reranked, QUESTION_POSITIVE) == 1
+
+
+def test_find_rank_returns_position_when_third():
+    reranked = [
+        {"doc_id": "docX", "madde_kind": "MADDE", "madde_no": "1"},
+        {"doc_id": "docY", "madde_kind": "MADDE", "madde_no": "2"},
+        {"doc_id": "doc1", "madde_kind": "MADDE", "madde_no": "9"},
+    ]
+    assert run_eval._find_rank(reranked, QUESTION_POSITIVE) == 3
+
+
+def test_find_rank_returns_none_when_not_found():
+    reranked = [{"doc_id": "doc2", "madde_kind": "MADDE", "madde_no": "9"}]
+    assert run_eval._find_rank(reranked, QUESTION_POSITIVE) is None
+
+
+def test_find_rank_returns_none_for_negative_question():
+    reranked = [{"doc_id": "doc1", "madde_kind": "MADDE", "madde_no": "9"}]
+    assert run_eval._find_rank(reranked, QUESTION_NEGATIVE) is None
+
+
+def test_summarize_computes_mrr():
+    results = [
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 1},
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 4},
+        {"is_negative_test": False, "difficulty": "orta", "recall_hit": False, "recall_rank": None},
+    ]
+    summary = run_eval.summarize(results)
+    assert abs(summary["mrr"] - 0.41666666666666663) < 1e-9
+
+
+def test_summarize_computes_average_latencies():
+    results = [
+        {
+            "is_negative_test": False, "difficulty": "kolay", "recall_hit": True,
+            "recall_rank": 1, "retrieval_latency_seconds": 0.2, "generation_latency_seconds": 1.0,
+        },
+        {
+            "is_negative_test": False, "difficulty": "kolay", "recall_hit": True,
+            "recall_rank": 1, "retrieval_latency_seconds": 0.4, "generation_latency_seconds": 2.0,
+        },
+    ]
+    summary = run_eval.summarize(results)
+    assert summary["avg_retrieval_latency_seconds"] == 0.3
+    assert summary["avg_generation_latency_seconds"] == 1.5

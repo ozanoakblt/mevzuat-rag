@@ -5,6 +5,8 @@ data/processed/
 *.index
 vectordb/
 data/vector_store/
+data/token_usage.jsonl
+data/query_expansion_cache.json
 __pycache__/
 *.pyc
 venv/

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from src.common.llm_router import LLMError, chat_completion_json
@@ -28,6 +29,28 @@ def _get_default_embedder():
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
+
+
+_DATE_TOKEN_RE = re.compile(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
+
+
+def _dates_conflict(question: str, cached_question: str | None) -> bool:
+    """
+    Iki soru da tarih icerip (orn. "27.01.2026 tarihli degisiklik...") bu
+    tarihler FARKLIYSA True doner. Gercek bir vakada tespit edildi: "X
+    tarihli degisiklikle Y Yonetmeliginde ne degisti?" kalibindaki iki
+    soru (farkli tarihli iki AYRI degisiklik hakkinda) 0.93 esiginin
+    UZERINDE anlamsal benzerlik verdi ve yanlislikla ayni alt-sorulari
+    paylasti - dogru tarihe ait icerik hic aranmadi. Tarih iceren sorularda
+    bu spesifik farkliligi anlamsal cache'in gormezden gelmesini onluyoruz.
+    """
+    if not cached_question:
+        return False
+    q_dates = set(_DATE_TOKEN_RE.findall(question))
+    c_dates = set(_DATE_TOKEN_RE.findall(cached_question))
+    if not q_dates or not c_dates:
+        return False
+    return q_dates != c_dates
 
 
 EXPANSION_SYSTEM_PROMPT = """Sen bir elektrik dagitim mevzuati arama asistanisin.
@@ -98,6 +121,8 @@ def expand_query(question: str, max_queries: int = 3, embedder=None) -> list[str
         best_similarity = 0.0
         for entry in cache.values():
             if not isinstance(entry, dict) or "embedding" not in entry:
+                continue
+            if _dates_conflict(question, entry.get("question")):
                 continue
             similarity = _cosine_similarity(query_embedding, entry["embedding"])
             if similarity > best_similarity:

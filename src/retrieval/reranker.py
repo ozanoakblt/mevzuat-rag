@@ -81,6 +81,20 @@ class Reranker:
         karar verir" varsayımına karşı bir güvenlik ağı — projedeki diğer
         "gerekirse otomatik düzelt" katmanlarıyla (chunk_id çakışma
         koruması, robots.txt fail-safe vb.) aynı felsefede.
+
+        ONEMLI (duzeltildi): eski surum, kurtarilan ogeyi top_k listesinin
+        icindeki EN DUSUK ONCELIKLI slotun YERINE koyuyordu - ama bu slot
+        genellikle top_k'nin TAM SINIRINDAKI (7./8. sira gibi) dogru bir
+        sonuc oluyordu (tanim geregi, "sinirda olan" her zaman "en dusuk
+        oncelikli" say?l?yordu), ve o slotun GERCEK reranker skoru
+        kurtarilan ogeden cok daha iyi olsa bile siliniyordu (gercek
+        vakada tespit edildi: q16'da Madde 1, skor -0.850 ile 7. siradayken,
+        skor bakilmaksizin sirf "korumasiz en dusuk oncelikli" oldugu icin
+        silindi). Simdi: kurtarilan oge var olan hicbir sonucu SILMIYOR,
+        listenin SONUNA EKLENIYOR (kendi gercek cross-encoder skoruyla,
+        sentetik "en dustaki skor" degil) - bu yuzden don us degeri bazen
+        top_k'dan biraz daha uzun olabilir (sadece kurtarma gerektiginde,
+        ki bu nadir - guard_pool zaten kucuk).
         """
         reranked = self.rerank(query, candidates, top_k=top_k)
         if not candidates:
@@ -92,36 +106,11 @@ class Reranker:
         if not missing or not reranked:
             return reranked
 
-        # Oncelik-tabanli kurtarma: guard_pool sirasi = onem sirasi (once
-        # eklenen = daha onemli). Her "missing" oge, mevcut reranked
-        # listesindeki EN DUSUK oncelikli (guard_pool'da yok = sonsuz
-        # dusuk, ya da guard_pool'da daha gec siradaki) slotu, KENDI
-        # onceliginden daha kotu ise ezer. Boylece yuksek oncelikli bir
-        # sonuc (or. hybrid'in 1 numarasi), guard havuzu buyuk oldugunda
-        # bile asla dusuk oncelikli baska bir guard uyesi tarafindan
-        # yanlislikla silinmez (gercek vakada tespit edilen hata buydu).
-        priority = {c["chunk_id"]: i for i, c in enumerate(guard_pool)}
-        base_score = min(r["rerank_score"] for r in reranked)
-
-        for i, rescue in enumerate(missing):
-            rescue_priority = priority[rescue["chunk_id"]]
-            worst_idx = None
-            worst_priority = -1
-            for idx2, r in enumerate(reranked):
-                p2 = priority.get(r["chunk_id"], float("inf"))
-                if worst_idx is None or p2 > worst_priority or (
-                    p2 == worst_priority
-                    and r["rerank_score"] < reranked[worst_idx]["rerank_score"]
-                ):
-                    worst_idx = idx2
-                    worst_priority = p2
-            if worst_idx is None or worst_priority <= rescue_priority:
-                continue
-            reranked[worst_idx] = {
-                **rescue,
-                "rerank_score": base_score - (i + 1) * 1e-6,
-                "rescued_by_safety_net": True,
-            }
-
+        missing_scores = self._model.predict([(query, c["text"]) for c in missing])
+        rescued = [
+            {**c, "rerank_score": float(score), "rescued_by_safety_net": True}
+            for c, score in zip(missing, missing_scores)
+        ]
+        reranked = reranked + rescued
         reranked.sort(key=lambda c: c["rerank_score"], reverse=True)
         return reranked

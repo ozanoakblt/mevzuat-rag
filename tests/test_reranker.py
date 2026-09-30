@@ -99,7 +99,11 @@ def test_safety_net_rescues_top_hybrid_result_when_dropped():
     rescued_result = reranker.rerank_with_safety_net("sorgu", candidates, top_k=2)
     rescued_ids = [r["chunk_id"] for r in rescued_result]
     assert "hybrid_top" in rescued_ids
-    assert len(rescued_result) == 2
+    # Kurtarma, var olan gercek top_k sonuclarini SILMEZ, sona EKLER -
+    # bu yuzden liste top_k'dan uzun olabilir (bkz. docstring: eski
+    # overwrite davranisi, sinirdaki dogru bir sonucu yanlislikla silebiliyordu).
+    assert "c2" in rescued_ids and "c3" in rescued_ids
+    assert len(rescued_result) == 3
 
 
 def test_safety_net_rescues_rank_three_hybrid_result_too():
@@ -130,7 +134,43 @@ def test_safety_net_rescues_rank_three_hybrid_result_too():
     assert "rank3_correct" not in [r["chunk_id"] for r in normal_result]
 
     rescued_result = reranker.rerank_with_safety_net("sorgu", candidates, top_k=3, guard_top_n=3)
-    assert "rank3_correct" in [r["chunk_id"] for r in rescued_result]
+    rescued_ids = [r["chunk_id"] for r in rescued_result]
+    assert "rank3_correct" in rescued_ids
+    # Orijinal top-3 (rank1, rank2, rank4) silinmeden korunmali.
+    assert set(rescued_ids) == {"rank1", "rank2", "rank4", "rank3_correct"}
+    assert len(rescued_result) == 4
+
+
+def test_safety_net_does_not_evict_a_borderline_correct_result_for_unrelated_rescue():
+    """
+    Gercek bir vakadan (q16): dogru cevap top_k'nin TAM SINIRINDA (en dusuk
+    skorlu ama gercek/pozitif bir sonuc) iken, guard_pool'daki BASKA bir
+    (alakasiz) uye kurtarilmak zorunda kaldiginda, eski overwrite mantigi
+    sinirdaki dogru sonucu - sirf "korumasiz en dusuk oncelikli" oldugu
+    icin - siliyordu (skoru kurtarilandan cok daha iyi olsa bile). Yeni
+    mantik hicbir seyi silmemeli, sadece ekleme yapmali.
+    """
+    candidates = [
+        {"chunk_id": "top1", "text": "guard'da olan, zaten hayatta kalan en iyi sonuc"},
+        {"chunk_id": "borderline_correct", "text": "sinirdaki gercek dogru cevap"},
+        {"chunk_id": "guard_missing", "text": "guard'da olan ama elenen alakasiz uye"},
+    ]
+    fake = FakeCrossEncoder(
+        {
+            "guard'da olan, zaten hayatta kalan en iyi sonuc": 10.0,
+            "sinirdaki gercek dogru cevap": 5.0,
+            "guard'da olan ama elenen alakasiz uye": -100.0,
+        }
+    )
+    reranker = Reranker(model=fake)
+    guard_pool = [candidates[0], candidates[2]]  # top1 ve guard_missing
+
+    rescued_result = reranker.rerank_with_safety_net(
+        "sorgu", candidates, top_k=2, guard_pool=guard_pool
+    )
+    rescued_ids = [r["chunk_id"] for r in rescued_result]
+    assert "borderline_correct" in rescued_ids
+    assert "guard_missing" in rescued_ids
     assert len(rescued_result) == 3
 
 

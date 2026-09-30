@@ -7,6 +7,7 @@ from src.generation.citation_guard import (
     check_confidence,
     check_numeric_consistency,
     check_uncited_negative_conclusion,
+    detect_institution_conflation,
     extract_citation_quotes,
     format_guard_warnings,
     run_guard,
@@ -145,6 +146,15 @@ def test_check_numeric_consistency_handles_turkish_number_words():
     assert result == []
 
 
+def test_check_numeric_consistency_ignores_written_month_name_dates():
+    chunks = [{"text": "Yonetmelik 32213 sayili Resmi Gazetede yayimlanmistir.", "rerank_score": 1.0}]
+    result = check_numeric_consistency(
+        "Bu yonetmelik 27 Ocak 2026 tarihinde yururluge girmistir.", chunks
+    )
+    assert "2026" not in result
+    assert "27" not in result
+
+
 def test_run_guard_flags_suspicious_number_as_low_confidence():
     chunks = [{"text": "Basvuru 90 gun icinde sonuclandirilir.", "rerank_score": 2.0}]
     answer = 'Basvuru 45 gun icinde sonuclanir.\nKaynak Alintilari:\n[1]: "Basvuru 90 gun icinde sonuclandirilir."'
@@ -194,3 +204,35 @@ def test_format_guard_warnings_flags_uncited_negative_conclusion():
     result = run_guard(answer, chunks)
     warnings = format_guard_warnings(result)
     assert "DESTEKSIZ OLUMSUZ SONUC" in warnings
+
+
+def test_detect_institution_conflation_flags_parenthetical_equating():
+    answer = "Dağıtım şirketinin (TEİAŞ) SCADA sistemi bu verileri toplar."
+    assert detect_institution_conflation(answer) is True
+
+
+def test_detect_institution_conflation_flags_connector_equating_without_parens():
+    answer = "Bu yetki TEİAŞ'a, yani dağıtım şirketine aittir."
+    assert detect_institution_conflation(answer) is True
+
+
+def test_detect_institution_conflation_covers_epias():
+    answer = "Piyasa işletmecisi EPDK (EPİAŞ) tarafından belirlenen fiyatları yayınlar."
+    assert detect_institution_conflation(answer) is True
+
+
+def test_detect_institution_conflation_distinguishes_gorevli_tedarik_from_tedarik():
+    # "gorevli tedarik sirketi" ve "tedarik sirketi" ayri kavramlar (kural 15),
+    # ayni terim olarak yanlislikla esitlenmemeli.
+    answer = "Bu yükümlülük görevli tedarik şirketine (tedarik şirketine) aittir."
+    assert detect_institution_conflation(answer) is True
+
+
+def test_detect_institution_conflation_ignores_same_institution_repeated():
+    answer = "TEİAŞ (TEİAŞ) bu konuda yetkilidir."
+    assert detect_institution_conflation(answer) is False
+
+
+def test_detect_institution_conflation_false_when_only_one_institution_mentioned():
+    answer = "Bu konuda TEİAŞ yetkilidir, dağıtım şirketlerinin bu konuda bir görevi yoktur."
+    assert detect_institution_conflation(answer) is False

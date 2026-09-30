@@ -171,6 +171,16 @@ _ARTICLE_NUMBER_CONTEXT_RE = re.compile(
 
 _DATE_RE = re.compile(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
 
+_TURKISH_MONTHS = (
+    r"Ocak|Şubat|Subat|Mart|Nisan|Mayıs|Mayis|Haziran|Temmuz|Ağustos|Agustos|"
+    r"Eylül|Eylul|Ekim|Kasım|Kasim|Aralık|Aralik"
+)
+# "27 Ocak 2026" gibi yazili ay adli tarihler - _DATE_RE sadece gg.aa.yyyy /
+# gg/aa/yyyy formatini yakaliyor, bu format ayri bir pattern gerektiriyor.
+_WRITTEN_DATE_RE = re.compile(
+    rf"\b\d{{1,2}}\s+(?:{_TURKISH_MONTHS})\s+\d{{4}}\b", re.IGNORECASE
+)
+
 
 def check_numeric_consistency(answer_text: str, chunks: list[dict]) -> list[str]:
     """
@@ -181,13 +191,14 @@ def check_numeric_consistency(answer_text: str, chunks: list[dict]) -> list[str]
     - "<sayi> sayili <Kanun/Yonetmelik>" (kanun numarasi)
     - "Madde <sayi>" / "<sayi> uncu madde" / "fikra (<sayi>)" (madde/fikra/
       bent numarasi)
-    - Tarihler (27.01.2026, 5/6/2023 gibi)
+    - Tarihler (27.01.2026, 5/6/2023 ya da "27 Ocak 2026" gibi yazili ay adli)
     """
     combined_source = _normalize_turkish_numbers(
         "\n".join(c["text"] for c in chunks)
     )
 
     text_without_dates = _DATE_RE.sub(" ", answer_text)
+    text_without_dates = _WRITTEN_DATE_RE.sub(" ", text_without_dates)
     answer_numbers = set(_NUMBER_RE.findall(_normalize_turkish_numbers(text_without_dates)))
 
     law_reference_numbers = {
@@ -261,32 +272,75 @@ def verify_citations(answer_text: str, chunks: list[dict]) -> list[CitationCheck
 
 import re as _re
 
-_INSTITUTION_CONFLATION_RE = _re.compile(
-    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\s*"
+# Kural 15'teki (answer_generator.py) tam kurum listesiyle hizali: TEIAS,
+# dagitim sirketleri, EPDK, gorevli tedarik sirketi, tedarik sirketleri.
+# EPIAS (piyasa isletmecisi) da eklendi - onceden hic kapsanmiyordu, bilinen
+# bir bosluktu. "gorevli tedarik sirket*" alternatifi "tedarik sirket*"ten
+# ONCE denenmeli (alternation sirasi onemli) - yoksa "gorevli tedarik
+# sirketi" ifadesindeki "tedarik sirketi" kismi yanlislikla ayri, daha kisa
+# bir terim olarak eslesir.
+_INSTITUTION_TERMS = (
+    r"görevli\s+tedarik\s+şirket\w*"
+    r"|dağıtım\s+şirket\w*"
+    r"|tedarik\s+şirket\w*"
+    r"|TEİAŞ"
+    r"|EPİAŞ"
+    r"|EPDK"
+)
+
+_INSTITUTION_CONFLATION_PAREN_RE = _re.compile(
+    rf"({_INSTITUTION_TERMS})\s*"
     r"\((?:örneğin|ör\.?|yani|diğer\s+bir\s+deyişle|misal)?\s*"
-    r"(dağıtım\s+şirket\w*|TEİAŞ|EPDK)\)",
+    rf"({_INSTITUTION_TERMS})\)",
+    _re.IGNORECASE,
+)
+
+# Parantezsiz esitleme: "X, yani Y" / "X diger bir deyisle Y" gibi. Terimden
+# sonra gelen Turkce iyelik/hal eki ("TEİAŞ'a" gibi) icin istege bagli
+# kesme-isareti+ek kismi da tuketiliyor.
+_INSTITUTION_CONFLATION_CONNECTOR_RE = _re.compile(
+    rf"({_INSTITUTION_TERMS})(?:['’]\w*)?\s*,?\s*"
+    r"(?:yani|diğer\s+bir\s+deyişle|başka\s+bir\s+deyişle)\s+"
+    rf"({_INSTITUTION_TERMS})\b",
     _re.IGNORECASE,
 )
 
 
+def _canonical_institution(term: str) -> str:
+    t = term.lower()
+    if "görevli" in t and "tedarik" in t:
+        return "gorevli_tedarik"
+    if "dağıtım" in t:
+        return "dagitim"
+    if "tedarik" in t:
+        return "tedarik"
+    if "teiaş" in t:
+        return "teias"
+    if "epiaş" in t:
+        return "epias"
+    if "epdk" in t:
+        return "epdk"
+    return t
+
+
 def detect_institution_conflation(answer_text: str) -> bool:
     """
-    Modelin farkli kurumlari (TEIAS, dagitim sirketi, EPDK) birbirinin
-    esanlamlisi gibi sunmasini tespit eder - ornegin "dagitim sirketi
-    (TEIAS)" gibi bir ifade, bu iki AYRI tuzel kisiyi yanlislikla
-    esitleme anlamina gelir (gercek bir vakada tespit edildi: model
-    "Dagitim sirketinin (TEIAS) SCADA sistemi..." diye yazmisti, oysa
-    kaynak metin sadece TEIAS'tan bahsediyordu, dagitim sirketinden
-    hic bahsetmiyordu). Prompt kurali (kural 15) bunu her zaman
-    onleyemedigi icin, kod seviyesinde ek bir guvenlik agi olarak
-    eklendi - tespit edilirse otomatik dusuk guven tetiklenir.
+    Modelin farkli kurumlari (TEIAS, dagitim sirketi, EPDK, EPIAS, gorevli
+    tedarik sirketi, tedarik sirketi) birbirinin esanlamlisi gibi sunmasini
+    tespit eder - ornegin "dagitim sirketi (TEIAS)" gibi bir ifade, bu iki
+    AYRI tuzel kisiyi yanlislikla esitleme anlamina gelir (gercek bir
+    vakada tespit edildi: model "Dagitim sirketinin (TEIAS) SCADA
+    sistemi..." diye yazmisti, oysa kaynak metin sadece TEIAS'tan
+    bahsediyordu, dagitim sirketinden hic bahsetmiyordu). Prompt kurali
+    (kural 15) bunu her zaman onleyemedigi icin, kod seviyesinde ek bir
+    guvenlik agi olarak eklendi - tespit edilirse otomatik dusuk guven
+    tetiklenir. Hem parantezli ("X (Y)") hem parantezsiz baglacli ("X
+    yani Y") esitleme kaliplarini kontrol eder.
     """
-    for m in _INSTITUTION_CONFLATION_RE.finditer(answer_text):
-        a, b = m.group(1).lower(), m.group(2).lower()
-        a_norm = "dagitim" if "dağıtım" in a else a
-        b_norm = "dagitim" if "dağıtım" in b else b
-        if a_norm != b_norm:
-            return True
+    for pattern in (_INSTITUTION_CONFLATION_PAREN_RE, _INSTITUTION_CONFLATION_CONNECTOR_RE):
+        for m in pattern.finditer(answer_text):
+            if _canonical_institution(m.group(1)) != _canonical_institution(m.group(2)):
+                return True
     return False
 
 
