@@ -126,6 +126,7 @@ class AskResponse(BaseModel):
     sources: list[SourceOut]
     confidence_level: str  # "high" | "low"
     warnings: str
+    applicability_checked: bool
 
 
 class FeedbackRequest(BaseModel):
@@ -231,7 +232,7 @@ def ask(req: AskRequest) -> AskResponse:
         print("=" * 60)
         raise
     guard = run_guard(answer, top_chunks)
-    applicability = check_applicability(question, answer)
+    applicability = check_applicability(question, answer, retrieved_chunks=top_chunks)
 
     sources = [
         SourceOut(
@@ -249,18 +250,29 @@ def ask(req: AskRequest) -> AskResponse:
 
     warnings = format_guard_warnings(guard)
     is_low_confidence = guard.is_low_confidence
-    if not applicability.applicable:
+    if applicability.checked and applicability.applicable is False:
         is_low_confidence = True
         reason_suffix = f" ({applicability.reason})" if applicability.reason else ""
         warnings = (
             warnings + "\n" if warnings else ""
         ) + f"UYARI - UYGULANABİLİRLİK: Bulunan hükümler, sorudaki spesifik durumla tam örtüşmüyor olabilir{reason_suffix}. Kaynakları dikkatle kontrol edin."
+    elif not applicability.checked:
+        # Eskiden kontrol basarisiz olunca applicable=True (fail-open)
+        # donup sessizce "kontrol edildi, sorun yok" ile ayni gorunuyordu.
+        # Artik bu durum ayrica isaretleniyor - confidence'i zorla "low"a
+        # CEKMIYORUZ (tek basina bir network/kota hatasi her cevabi
+        # alarma cevirmemeli), ama API tuketicisi applicability_checked
+        # alanindan bu kontrolun hic calismadigini gorebilir.
+        warnings = (
+            warnings + "\n" if warnings else ""
+        ) + "NOT - UYGULANABİLİRLİK KONTROLÜ ÇALIŞTIRILAMADI: Bu cevap için ayrı uygulanabilirlik denetimi yapılamadı, sonuç bu açıdan doğrulanmamıştır."
 
     return AskResponse(
         answer=answer,
         sources=sources,
         confidence_level="low" if is_low_confidence else "high",
         warnings=warnings,
+        applicability_checked=applicability.checked,
     )
 
 

@@ -1,6 +1,7 @@
 ﻿"""
 query_expansion modulu icin testler.
 """
+import json
 from unittest.mock import patch
 
 import pytest
@@ -89,6 +90,24 @@ def test_expand_query_semantic_match_reuses_cache_without_llm_call():
         second = expand_query("kesinti tazminatinin hesaplanma yontemi nedir", embedder=FakeEmbedder(vectors))
     assert mock_llm.call_count == 1
     assert first == second == ["s1", "s2", "s3"]
+
+
+def test_expand_query_skips_cache_entries_with_null_embedding():
+    # Gercek bir vakada tespit edildi: embedder o zamanki cagride basarisiz
+    # olup query_embedding=None dondugunde, "embedding" anahtari kayitta
+    # VAR ama degeri None oluyor. Benzerlik dongusu sadece anahtarin
+    # varligini kontrol ediyordu, None degeri es geciyordu ve
+    # _cosine_similarity(query_embedding, None) TypeError firlatip
+    # /api/ask'i tamamen kirıyordu (500 Internal Server Error).
+    query_expansion._CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    bad_key = query_expansion._cache_key("bozuk kayitli soru")
+    bad_entry = {"question": "bozuk kayitli soru", "embedding": None, "queries": ["x"], "query_type": "genel_hukum"}
+    query_expansion._CACHE_PATH.write_text(json.dumps({bad_key: bad_entry}), encoding="utf-8")
+
+    fake_response = {"queries": ["yeni1", "yeni2"]}
+    with patch("src.retrieval.query_expansion.chat_completion_json", return_value=fake_response):
+        result = expand_query("tamamen farkli yeni bir soru", embedder=FakeEmbedder({"tamamen farkli yeni bir soru": [1.0, 0.0]}))
+    assert result == ["yeni1", "yeni2"]
 
 
 def test_expand_query_dissimilar_question_does_not_reuse_cache():

@@ -51,6 +51,20 @@ Kaynak AlÄ±ntÄ±larÄ±:
     assert quotes[2] == "AnlaÅŸma gÃ¼cÃ¼ TEÄ°AÅ tarafÄ±ndan belirlenir"
 
 
+def test_extract_citation_quotes_parses_smart_quotes():
+    # Gercek bir vakada tespit edildi (EPDK sinav testi q03): LLM bazen
+    # duz ASCII tirnak yerine akilli (curly) tirnak kullaniyor. Eskiden
+    # regex bunu hic yakalamiyor, total_citation_count=0 cikip cevap
+    # gereksiz yere dusuk-guven damgasi yiyordu.
+    answer = '''Kaynak Alıntıları:
+[1]: “OSB'ler TEİAŞ'a başvurur”
+[2]: "Anlaşma gücü TEİAŞ tarafından belirlenir"
+'''
+    quotes = extract_citation_quotes(answer)
+    assert quotes[1] == "OSB'ler TEİAŞ'a başvurur"
+    assert quotes[2] == "Anlaşma gücü TEİAŞ tarafından belirlenir"
+
+
 def test_verify_citations_grounded_quote_passes():
     answer = 'Kaynak AlÄ±ntÄ±larÄ±:\n[1]: "OSB\'ler TEÄ°AÅ\'a baÅŸvurur"'
     checks = verify_citations(answer, CHUNKS)

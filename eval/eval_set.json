@@ -654,6 +654,457 @@
       "difficulty": "zor",
       "scenario_tag": null,
       "notes": "KASITLI KAPSAM DISI TEST: KDV orani vergi hukuku/Hazine ve Maliye Bakanligi yetki alaninda, EPDK'nin dogrudan duzenledigi bir konu degil ve korpusumuzda hicbir kaynak vergi oranlarindan bahsetmiyor. Tarife tebligleri fiyat/bedel hesaplamalarindan bahsetse de KDV orani ayri, vergi kanunuyla belirlenen bir deger - sistem bunu tarife maddeleriyle karistirip uydurmamali."
+    },
+    {
+      "id": "q53",
+      "question": "2026 itibarıyla 'kaç kW üzerindeki tüm abonelerde akıllı sayaç zorunludur?' sorusuna mevzuata uygun cevap verin. Genel bir kW eşiği var mı?",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 1). Onceki test kosusunda dusuk guvenle ve kapsam genisletme hatasiyla cevaplanmisti (10 kW uretim tesisleri sinirini tum abonelere genellemis) - answer_generator kural 6b bu hatayi onlemeyi hedefliyor."
+    },
+    {
+      "id": "q54",
+      "question": "Önceki yıl tüketimi veya yıl içindeki tüketimi hangi seviyenin üzerinde olan kullanım yerlerindeki mevcut sayaçlar Akıllı Sayaç PRO kapsamına girer?",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "kolay",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 2)."
+    },
+    {
+      "id": "q55",
+      "question": "Ayrı elektrik aboneliği bulunan bir şarj istasyonunda, tek bir DC şarj ünitesinin hangi güç seviyesine ulaşması halinde sayaç Akıllı Sayaç PRO kapsamına girer?",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "ev_sarj",
+      "notes": "EPDK sinav testi (Soru 3)."
+    },
+    {
+      "id": "q56",
+      "question": "Serbest tüketici olup tüketimi 10 MWh üzerindeki bir kullanım yeri tedarikçisini seçerse ve mevcut sayaç uzaktan haberleşmiyorsa ne yapılmalıdır ve hangi süre içinde?",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 4)."
+    },
+    {
+      "id": "q57",
+      "question": "2026 yılı serbest tüketici limiti kaç kWh/yıldır? Bu limit, Akıllı Sayaç PRO için kullanılan 10 MWh limiti ile aynı şey midir?",
+      "expected_documents": [
+        "kurul-karari-serbest-tuketici-limiti-2026",
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 5). Onceki kosuda '2026 icin bilgi yok' diye yanlis cevaplanmisti - kurul-karari-serbest-tuketici-limiti-2026 belgesi bu bosluk icin eklendi."
+    },
+    {
+      "id": "q58",
+      "question": "Uzaktan okuma dışındaki genel uygulamada sayaçlar hangi gün aralığında ve hangi sıklıkta okunmalıdır?",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "kolay",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 6)."
+    },
+    {
+      "id": "q59",
+      "question": "Teknik kalite kavramı hangi dört ana elektriksel özellik açısından tanımlanmaktadır?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "kolay",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 7)."
+    },
+    {
+      "id": "q60",
+      "question": "Dağıtım sisteminde teknik kalitenin belirlenmesinde kullanılan başlıca parametreleri sayın.",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "kolay",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 8)."
+    },
+    {
+      "id": "q61",
+      "question": "Kullanıcı teknik kalite ölçümü talep eder ve cihazı kendisi temin ederse dağıtım şirketi ölçüme en geç kaç iş günü içinde başlamalıdır? Ölçüm süresi asgari ne kadardır?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 9)."
+    },
+    {
+      "id": "q62",
+      "question": "Cihazı dağıtım şirketi temin ederse kullanıcı talepli teknik kalite ölçümüne en geç kaç iş günü içinde başlanmalıdır?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 10)."
+    },
+    {
+      "id": "q63",
+      "question": "Kullanıcı özellikle A sınıfı cihaz talep etmemişse ve şikâyet edilen parametre için yeterliyse hangi sınıf cihazla ölçüm yapılabilir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 11)."
+    },
+    {
+      "id": "q64",
+      "question": "Kullanıcı talebiyle yapılan ölçüm TS EN 50160 sınırları içinde çıkarsa ölçüm bedelini kim öder?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 12)."
+    },
+    {
+      "id": "q65",
+      "question": "Ölçüm sınır değerleri aşıyorsa ve bozulmaya başvuran kullanıcı sebep olmuyorsa ölçüm bedelini kim öder?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 13)."
+    },
+    {
+      "id": "q66",
+      "question": "Kullanıcı teknik kalite ölçüm cihazını kendisi sağlarsa, sonuç uygun çıksa bile dağıtım şirketi kullanıcıdan ölçüm hizmet bedeli talep edebilir mi?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 14)."
+    },
+    {
+      "id": "q67",
+      "question": "2026 yılında S sınıfı teknik kalite ölçümünün AG ve OG seviyesindeki bedelleri nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite",
+        "kurul-karari-teknik-kalite-olcum-bedeli-2026"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 15). Guncel TL tutari sadece kurul-karari-teknik-kalite-olcum-bedeli-2026 belgesinde var, usul-teknik-kalite sadece ucret mekanizmasini tanimliyor."
+    },
+    {
+      "id": "q68",
+      "question": "2026 yılında A sınıfı teknik kalite ölçümünün AG ve OG seviyesindeki bedelleri nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite",
+        "kurul-karari-teknik-kalite-olcum-bedeli-2026"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 16). Guncel TL tutari sadece kurul-karari-teknik-kalite-olcum-bedeli-2026 belgesinde var, usul-teknik-kalite sadece ucret mekanizmasini tanimliyor."
+    },
+    {
+      "id": "q69",
+      "question": "Dağıtım şirketi S sınıfı cihaz yerine A sınıfı cihaz kullanırsa kullanıcıdan hangi cihaz sınıfının bedeli tahsil edilir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 17)."
+    },
+    {
+      "id": "q70",
+      "question": "Kullanıcı kendi teknik kalite ölçüm cihazını nereye tesis etme hakkına sahiptir? Cihazın kayıtları mevzuat açısından dikkate alınır mı?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 18)."
+    },
+    {
+      "id": "q71",
+      "question": "Dağıtım şirketinin ilk defa teknik kalite ölçümü yapacağı OG dağıtım merkezlerinin öncelik sırası nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [
+        "MADDE 7"
+      ],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 19)."
+    },
+    {
+      "id": "q72",
+      "question": "Aynı tip iki OG dağıtım merkezi arasında hangisine öncelik verilir? Fider sayısı da eşitse hangi kriter kullanılır?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 20). NOT: Onceki analizde bu soru (q20 karsiligi) gercek bir embedding/terim uyusmazligi bosluguydu - bilerek zayif kapsanan konu, dusuk guven bekleniyor."
+    },
+    {
+      "id": "q73",
+      "question": "Seçilen dağıtım merkezinde iki teknik kalite cihazının hangi iki karakteristik noktaya yerleştirilmesi gerekir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 21)."
+    },
+    {
+      "id": "q74",
+      "question": "Ölçüm için seçilen noktada ölçü hücresi yok ve yeni ölçü hücresi için de uygun yer yoksa cihaz nereye tesis edilir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 22)."
+    },
+    {
+      "id": "q75",
+      "question": "Kullanıcı talepli ölçümde uygunsuzluk tespit edilirse AG tesis seviyesindeki düzeltici işlemler için azami süre nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 23)."
+    },
+    {
+      "id": "q76",
+      "question": "Dağıtım transformatörü değişikliği gerekiyorsa teknik kaliteyi sağlamak için azami süre nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 24)."
+    },
+    {
+      "id": "q77",
+      "question": "Yeni dağıtım transformatörü tesisi ve/veya OG seviyesinde işlem gerekiyorsa azami süre nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 25)."
+    },
+    {
+      "id": "q78",
+      "question": "Düzeltici işlemler tamamlandıktan sonra uygunsuzluğun giderildiğini doğrulamak için aynı noktada asgari kaç hafta ölçüm yapılmalıdır?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 26)."
+    },
+    {
+      "id": "q79",
+      "question": "Teknik kaliteyi bozan unsurların giderilmesi için AG ve OG kullanıcılara sırasıyla kaç gün süre verilir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [
+        "MADDE 14"
+      ],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 27)."
+    },
+    {
+      "id": "q80",
+      "question": "Verilen sürede teknik kaliteyi bozan unsurları gidermeyen AG ve OG kullanıcılara uygulanabilen aylık ilave tutarlar ve azami uygulama süreleri nedir?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [
+        "MADDE 14"
+      ],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 28)."
+    },
+    {
+      "id": "q81",
+      "question": "Süreler sonunda teknik kaliteyi bozan unsurları gidermeyen kullanıcının bağlantısı kesilebilir mi?",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 29)."
+    },
+    {
+      "id": "q82",
+      "question": "Kalite Yönetmeliğine göre 'uzun kesinti' kaç dakikadan uzun kesintidir?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "kolay",
+      "scenario_tag": "tedarik_sureklilik",
+      "notes": "EPDK sinav testi (Soru 30)."
+    },
+    {
+      "id": "q83",
+      "question": "Uzun süreli kesinti tazminatı açısından kentsel, kentaltı ve kırsal bölgelerde eşik süreler sırasıyla kaç saattir?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [
+        "MADDE 18"
+      ],
+      "difficulty": "orta",
+      "scenario_tag": "tedarik_sureklilik",
+      "notes": "EPDK sinav testi (Soru 31)."
+    },
+    {
+      "id": "q84",
+      "question": "Kullanıcı, kesinti süre ve sayılarını kaydetmek için kendi onaylı ölçme-kayıt cihazını nereye tesis edebilir ve bu kayıtlar tazminat hesabında dikkate alınabilir mi?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "tedarik_sureklilik",
+      "notes": "EPDK sinav testi (Soru 32)."
+    },
+    {
+      "id": "q85",
+      "question": "Elektrik dağıtım sisteminden kaynaklanan kalite sorunu nedeniyle cihazı zarar gören kullanıcı, zararın ortaya çıkmasından itibaren kaç gün içinde dağıtım şirketine başvurmalıdır?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "hasar_tazmini",
+      "notes": "EPDK sinav testi (Soru 33)."
+    },
+    {
+      "id": "q86",
+      "question": "Hasar başvurusu haklı bulunmazsa dağıtım şirketi gerekçeli teknik raporla kullanıcıya kaç iş günü içinde bildirim yapmalıdır?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "hasar_tazmini",
+      "notes": "EPDK sinav testi (Soru 34)."
+    },
+    {
+      "id": "q87",
+      "question": "Dağıtım şirketi onarımı tercih etmişse, başvurunun haklı bulunmasından itibaren onarım azami kaç gün içinde yapılmalıdır?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "hasar_tazmini",
+      "notes": "EPDK sinav testi (Soru 35). Test kosusunda dogru cevaplandi (15 gun), mulga/degisik notasyon kuralinin (5d) dogru calistigi dogrulandi."
+    },
+    {
+      "id": "q88",
+      "question": "Dağıtım şirketi onarım masrafını ödeme yöntemini seçerse, kullanıcı faturayı ibraz ettikten sonra kaç iş günü içinde ödeme yapılmalıdır?",
+      "expected_documents": [
+        "yonetmelik-kalite-guncel"
+      ],
+      "expected_articles": [],
+      "difficulty": "orta",
+      "scenario_tag": "hasar_tazmini",
+      "notes": "EPDK sinav testi (Soru 36)."
+    },
+    {
+      "id": "q89",
+      "question": "Teknik kalite cihazlarının rutin ölçüm yerlerinin seçimi ile kullanıcının şikâyeti üzerine kendi bağlantı noktasında ölçüm yapılması aynı hukuki süreç midir? Aradaki temel farkı açıklayın.",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 37) - iki farkli usul karsilastirmasi gerektiren mevzuat-ayrimi sorusu."
+    },
+    {
+      "id": "q90",
+      "question": "'Bir abonenin tüketimi 500 kWh/yılı geçtiği için sayacı otomatik olarak Akıllı Sayaç PRO olmak zorundadır.' ifadesini değerlendirin.",
+      "expected_documents": [
+        "yonetmelik-olcum-sistemleri"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 38) - negatif/yanlis onerme testi, gercek esik 10 MWh (10.000 kWh) oldugundan sistem bu ifadeyi yanlislamali."
+    },
+    {
+      "id": "q91",
+      "question": "'Teknik kalite ölçümü uygun çıkarsa kullanıcı her durumda ücret öder.' ifadesini değerlendirin.",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": null,
+      "notes": "EPDK sinav testi (Soru 39) - negatif/yanlis onerme testi, madde 12 istisnalarini (cihazi dagitim sirketi sagladiysa vb.) atlamamali."
+    },
+    {
+      "id": "q92",
+      "question": "OG bağlı bir sanayi kullanıcısı gerilim kalitesinden şikâyet ediyor. Ölçüm şirketin cihazıyla yapılıyor, sonuç sınır dışı ve kullanıcı kaynaklı değil. Bedel, düzeltici işlem, olası süre ve doğrulama ölçümü açısından süreci özetleyin.",
+      "expected_documents": [
+        "usul-teknik-kalite"
+      ],
+      "expected_articles": [],
+      "difficulty": "zor",
+      "scenario_tag": "teknik_kalite_vaka",
+      "notes": "EPDK sinav testi (Soru 40) - coklu adimin tek cevapta birlestirilmesini gerektiren kapsamli vaka sorusu."
     }
   ]
 }

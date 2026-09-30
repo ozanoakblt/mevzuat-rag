@@ -65,14 +65,30 @@ def test_check_recall_negative_question_returns_none():
 
 def test_summarize_computes_recall_by_difficulty():
     results = [
-        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True},
-        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": False},
-        {"is_negative_test": False, "difficulty": "zor", "recall_hit": True},
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 2},
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": False, "recall_rank": None},
+        {"is_negative_test": False, "difficulty": "zor", "recall_hit": True, "recall_rank": 1},
     ]
     summary = run_eval.summarize(results)
-    assert summary["recall_at_5_kolay"] == 0.5
-    assert summary["recall_at_5_zor"] == 1.0
-    assert summary["recall_at_5_overall"] == pytest_approx(2 / 3)
+    # recall@8 (FINAL_TOP_K) - eskiden yanlislikla "recall_at_5" diye
+    # adlandirilan metrik budur (bkz. run_eval.py yorumu).
+    assert summary["recall_at_8_kolay"] == 0.5
+    assert summary["recall_at_8_zor"] == 1.0
+    assert summary["recall_at_8_overall"] == pytest_approx(2 / 3)
+
+
+def test_summarize_recall_at_k_uses_rank_not_just_hit_flag():
+    # rank=6, k=5 icin MISS olmali (recall_hit=True olsa bile, cunku hit
+    # FINAL_TOP_K=8 dahilinde ama ilk 5'te degil) - bu, K etiketinin
+    # anlamli olmasini saglayan asil davranis degisikligi.
+    results = [
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 1},
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 6},
+    ]
+    summary = run_eval.summarize(results)
+    assert summary["recall_at_1_overall"] == 0.5
+    assert summary["recall_at_5_overall"] == 0.5
+    assert summary["recall_at_8_overall"] == 1.0
 
 
 def pytest_approx(x, tol=1e-9):
@@ -176,6 +192,18 @@ def test_summarize_computes_mrr():
     ]
     summary = run_eval.summarize(results)
     assert abs(summary["mrr"] - 0.41666666666666663) < 1e-9
+
+
+def test_summarize_computes_mrr_at_k_caps_ranks_beyond_k():
+    # rank=6 icin mrr_at_5 katkisi 0 olmali (5'i asiyor), ama genel mrr'a
+    # (k=None, sinirsiz) 1/6 olarak katkida bulunmali.
+    results = [
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 6},
+    ]
+    summary = run_eval.summarize(results)
+    assert summary["mrr_at_5"] == 0.0
+    assert abs(summary["mrr"] - (1 / 6)) < 1e-9
+    assert abs(summary["mrr_at_8"] - (1 / 6)) < 1e-9
 
 
 def test_summarize_computes_average_latencies():

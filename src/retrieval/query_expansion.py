@@ -146,7 +146,7 @@ def _expand_and_classify(question: str, embedder=None) -> dict:
         best_entry = None
         best_similarity = 0.0
         for entry in cache.values():
-            if not isinstance(entry, dict) or "embedding" not in entry:
+            if not isinstance(entry, dict) or entry.get("embedding") is None:
                 continue
             if _dates_conflict(question, entry.get("question")):
                 continue

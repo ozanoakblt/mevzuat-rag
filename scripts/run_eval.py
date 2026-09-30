@@ -192,6 +192,32 @@ def run_single_question(
     return result
 
 
+# Eskiden tek bir "recall_at_5_*" metrigi vardi ama K=5 ETIKETI YANLISTI -
+# gercek retrieval derinligi FINAL_TOP_K=8'di (bkz. yukarida), yani
+# raporlanan "recall@5" aslinda recall@8 olcuyordu. Bunun otesinde tek bir
+# K, legal RAG icin yeterli sinyal vermiyor: "dogru madde bulundu mu"
+# (kapsama) ile "dogru madde NE KADAR YUKARIDA" (siralama kalitesi) FARKLI
+# sorular - orn. recall@8 %95.65 olsa bile MRR 0.495 gibi dusuk cikabilir,
+# bu da sistemin cogu zaman dogru maddeyi buluyor ama onu ust siralara
+# tasiyamadigini gosterir. recall_rank (1-tabanli pozisyon, _find_rank'ten)
+# zaten her soru icin hesaplaniyor - K=1/3/5/8 kesitlerini buradan turetmek
+# ekstra retrieval GEREKTIRMEZ, sadece "rank <= K mi" kontrolu.
+_RECALL_K_VALUES = (1, 3, 5, FINAL_TOP_K)
+
+
+def _recall_at_k(results: list[dict], k: int) -> float:
+    hits = sum(1 for r in results if r.get("recall_rank") is not None and r["recall_rank"] <= k)
+    return hits / len(results)
+
+
+def _mrr_at_k(results: list[dict], k: int | None = None) -> float:
+    reciprocal_ranks = [
+        (1.0 / r["recall_rank"]) if r.get("recall_rank") and (k is None or r["recall_rank"] <= k) else 0.0
+        for r in results
+    ]
+    return sum(reciprocal_ranks) / len(reciprocal_ranks)
+
+
 def summarize(results: list[dict]) -> dict:
     positive = [r for r in results if not r["is_negative_test"]]
     negative = [r for r in results if r["is_negative_test"]]
@@ -199,18 +225,15 @@ def summarize(results: list[dict]) -> dict:
     summary = {"total_questions": len(results)}
 
     if positive:
-        hits = sum(1 for r in positive if r["recall_hit"])
-        summary["recall_at_5_overall"] = hits / len(positive)
-        for diff in ("kolay", "orta", "zor"):
-            subset = [r for r in positive if r["difficulty"] == diff]
-            if subset:
-                sub_hits = sum(1 for r in subset if r["recall_hit"])
-                summary[f"recall_at_5_{diff}"] = sub_hits / len(subset)
-        reciprocal_ranks = [
-            (1.0 / r["recall_rank"]) if r.get("recall_rank") else 0.0
-            for r in positive
-        ]
-        summary["mrr"] = sum(reciprocal_ranks) / len(reciprocal_ranks)
+        for k in _RECALL_K_VALUES:
+            summary[f"recall_at_{k}_overall"] = _recall_at_k(positive, k)
+            for diff in ("kolay", "orta", "zor"):
+                subset = [r for r in positive if r["difficulty"] == diff]
+                if subset:
+                    summary[f"recall_at_{k}_{diff}"] = _recall_at_k(subset, k)
+        summary["mrr"] = _mrr_at_k(positive)
+        summary["mrr_at_5"] = _mrr_at_k(positive, k=5)
+        summary["mrr_at_8"] = _mrr_at_k(positive, k=FINAL_TOP_K)
 
     retrieval_latencies = [
         r["retrieval_latency_seconds"] for r in results if "retrieval_latency_seconds" in r

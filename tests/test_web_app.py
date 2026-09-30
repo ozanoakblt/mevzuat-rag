@@ -136,6 +136,50 @@ def test_ask_flags_low_confidence_when_applicability_check_fails():
     assert "UYGULANABİLİRLİK" in result.warnings
 
 
+def test_ask_notes_when_applicability_check_could_not_run():
+    # Eskiden check_applicability basarisiz olunca applicable=True (fail-
+    # open) donuyor ve API bunu "kontrol edildi, sorun yok" ile ayni
+    # gosteriyordu. Artik checked=False acikca API yanitina tasinmali ve
+    # kullaniciya kontrolun calismadigi bildirilmeli - ama TEK BASINA
+    # confidence_level'i "low"a CEKMEMELI (bir kota/network hatasi her
+    # cevabi alarma cevirmemeli).
+    web_app._state["vector_store"] = FakeVectorStore()
+    web_app._state["embedder"] = object()
+    web_app._state["bm25_index"] = object()
+
+    fake_chunk = {
+        "chunk_id": "doc1::m1",
+        "doc_id": "kanun-6446",
+        "madde_kind": "MADDE",
+        "madde_no": "1",
+        "fikra_no": "1",
+        "bent_no": None,
+        "madde_baslik": "Amaç",
+        "text": "Bu maddenin amacı test etmektir.",
+        "rerank_score": 3.5,
+        "rrf_score": 0.05,
+    }
+
+    class FakeReranker:
+        def rerank_with_safety_net(self, query, candidates, top_k=5, guard_pool=None):
+            return [fake_chunk]
+
+    web_app._state["reranker"] = FakeReranker()
+
+    unchecked = ApplicabilityResult(applicable=None, reason="", checked=False)
+    with patch.object(web_app, "hybrid_search", return_value=[fake_chunk]), patch.object(
+        web_app, "generate_answer", return_value="Test cevabı [1]."
+    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]), patch.object(
+        web_app, "get_query_type", return_value="genel_hukum"
+    ), patch.object(
+        web_app, "check_applicability", return_value=unchecked
+    ):
+        result = web_app.ask(web_app.AskRequest(question="test sorusu"))
+
+    assert result.applicability_checked is False
+    assert "UYGULANABİLİRLİK KONTROLÜ ÇALIŞTIRILAMADI" in result.warnings
+
+
 def test_ask_boosts_preferred_doc_type_for_guncel_deger_queries():
     # Gercek bir vakadan (EPDK sinav testi, Soru 5): "2026 limiti nedir"
     # gibi sorular sadece yillik Kurul Kararlarinda bulunuyor, Yonetmelik/

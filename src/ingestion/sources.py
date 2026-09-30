@@ -5055,6 +5055,22 @@ SOURCES: list[SourceDoc] = [
             "kararlarda yer aliyor."
         ),
     ),
+    SourceDoc(
+        doc_id="kurul-karari-teknik-kalite-olcum-bedeli-2026",
+        title="1/1/2026 Tarihinden İtibaren Uygulanan Teknik Kalite Ölçüm Hizmeti Bedelleri Hakkında Kurul Kararı",
+        url="https://www.epdk.gov.tr/Detay/DownloadDocument?id=TGYRkF2gQ4w=",
+        fetch_type="direct_file",
+        doc_type="karar",
+        notes=(
+            "EPDK resmi sitesi > Mevzuat > Elektrik Piyasasi > Tarifeler > Nihai "
+            "Kullanicilara Uygulanan Diger Bedeller > Teknik Kalite Olcum Hizmet "
+            "Bedeli sayfasindan elle indirildi (2026-09-30, Karar No: 14165-13, "
+            "25/12/2025). EPDK sinav testinde (Soru 15/16) eksikligi tespit "
+            "edilen, yillik guncellenen bir Kurul Karari - temel usul ve esaslar "
+            "('usul-teknik-kalite') zaten korpusta ama guncel TL tutarlari "
+            "sadece bu tur yillik kararlarda yer aliyor."
+        ),
+    ),
 ]
 
 

@@ -22,7 +22,14 @@ from dataclasses import dataclass, field
 
 LOW_CONFIDENCE_RERANK_THRESHOLD = 0.0
 
-_CITATION_QUOTE_RE = re.compile(r'\[(\d+)\]:\s*"([^"]+)"')
+# LLM bazen duz ASCII tirnak (") yerine "akilli" (curly) tirnak ("...")
+# kullaniyor - gercek bir vakada tespit edildi (EPDK sinav testi q03):
+# alinti dogru ve kaynakta birebir vardi ama regex sadece ASCII tirnagi
+# yakaladigindan total_citation_count=0 cikti ve cevap gereksiz yere
+# dusuk-guven damgasi yedi. Acilis/kapanis tirnaklarini ayri karakter
+# siniflarinda tutuyoruz (curly tirnaklar simetrik degil: " acilis, "
+# kapanis).
+_CITATION_QUOTE_RE = re.compile(r'\[(\d+)\]:\s*["“]([^"”]+)["”]')
 
 
 _TURKISH_NUMBER_WORDS = {

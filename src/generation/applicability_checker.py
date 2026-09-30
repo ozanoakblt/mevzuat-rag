@@ -26,9 +26,9 @@ from dataclasses import dataclass
 
 from src.common.llm_router import LLMError, chat_completion_json
 
-APPLICABILITY_SYSTEM_PROMPT = """Sen bir hukuki uygulanabilirlik denetcisisin. Sana bir KULLANICI SORUSU ve bu soruya verilen bir CEVAP (kaynak alintilariyla) verilecek.
+APPLICABILITY_SYSTEM_PROMPT = """Sen bir hukuki uygulanabilirlik denetcisisin. Sana bir KULLANICI SORUSU, bu soruya verilen bir CEVAP (kaynak alintilariyla) ve varsa cevapta kullanilan KAYNAK PASAJLARIN ham metni verilecek.
 
-Gorevin: cevapta kullanilan hukumlerin/kurallarin, sorudaki SPESIFIK olay/durumla GERCEKTEN ortustugunu kontrol etmek.
+Gorevin: cevapta kullanilan hukumlerin/kurallarin, sorudaki SPESIFIK olay/durumla GERCEKTEN ortustugunu kontrol etmek. Kaynak pasajlar verilmisse, yargini SADECE cevabin kendi ozetine degil, o ham pasajlarin GERCEKTEN neyi duzenledigine dayandir.
 
 Ozellikle su tuzaga dikkat et: cevap, sorudakiyle YUZEYSEL benzer ama ONEMLI bir kosulda (kim sorumlu, hangi taraf kaynakli, hangi kullanici/tesis tipi, hangi olay/sebep, hangi yon/istikamet) FARKLI bir senaryoya ait bir hukmu uyguluyor olabilir.
 
@@ -43,23 +43,47 @@ Sadece su JSON formatinda cevap ver, baska hicbir sey yazma:
 
 @dataclass
 class ApplicabilityResult:
-    applicable: bool
+    applicable: bool | None  # None = kontrol hic yapilamadi (LLM hatasi) - "guvenli" varsayilmaz
     reason: str
     checked: bool  # LLM cagrisi basarili oldu mu
 
 
-def check_applicability(question: str, answer_text: str) -> ApplicabilityResult:
+def _format_evidence(chunks: list[dict] | None, max_chunks: int = 8) -> str:
+    if not chunks:
+        return ""
+    lines = []
+    for i, c in enumerate(chunks[:max_chunks], 1):
+        label = f"{c.get('madde_kind', '')} {c.get('madde_no', '')}".strip()
+        text = (c.get("text") or "").strip()
+        lines.append(f"[{i}] ({label}) {text}")
+    return "\n".join(lines)
+
+
+def check_applicability(
+    question: str, answer_text: str, retrieved_chunks: list[dict] | None = None
+) -> ApplicabilityResult:
     """
-    LLM basarisiz olursa (kota/hata) guard'i BLOKLAMAZ - sessizce
-    applicable=True, checked=False doner (fail-open). Bu kontrol bir
-    GUVENLIK AGI - kendisi basarisiz olunca sistemin tamamini kilitlememeli,
-    citation_guard'daki diger deterministik kontroller zaten calisir.
+    retrieved_chunks: uygulanabilirlik yargisinin sadece cevap metnindeki
+    (LLM'in kendi ozetledigi) alintilara degil, GERCEKTEN kullanilan kaynak
+    pasajlarin ham metnine dayanmasi icin verilir - eskiden checker sadece
+    (question, answer) goruyordu, yani modelin kendi cevabinin dogrulugunu
+    yine modelin kendi cevabina bakarak yargiliyordu (kor nokta).
+
+    LLM basarisiz olursa (kota/hata) guard'i BLOKLAMAZ ama "kontrol edildi
+    ve sorun yok" da DEMEZ - applicable=None, checked=False doner. Eskiden
+    applicable=True donuyordu (fail-open); bu, "kontrol basarisiz oldu"
+    durumunu "kontrol edildi, uygun bulundu" ile ayni gostermenin YANLIS
+    guvenlik sinyali verdigi tespit edildi - caginin API katmani bu
+    farki confidence_level'a yansitmali (bkz. web/app.py).
     """
+    evidence = _format_evidence(retrieved_chunks)
     user_prompt = f"KULLANICI SORUSU:\n{question}\n\nCEVAP:\n{answer_text}"
+    if evidence:
+        user_prompt += f"\n\nCEVAPTA KULLANILAN KAYNAK PASAJLAR (ham metin):\n{evidence}"
     try:
         result = chat_completion_json(APPLICABILITY_SYSTEM_PROMPT, user_prompt, temperature=0.0)
         applicable = result.get("applicable", True)
         reason = str(result.get("reason", "") or "")
         return ApplicabilityResult(applicable=bool(applicable), reason=reason, checked=True)
     except LLMError:
-        return ApplicabilityResult(applicable=True, reason="", checked=False)
+        return ApplicabilityResult(applicable=None, reason="", checked=False)

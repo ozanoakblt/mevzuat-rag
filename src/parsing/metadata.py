@@ -337,6 +337,36 @@ def parse_and_save(
     ]
     chunks = build_chunks(doc_meta, blocks)
 
+    # Bazi "karar" tipi belgeler (ozellikle yillik ucret/bedel guncelleme
+    # Kurul Kararlari) MADDE basligi hic kullanmaz - tek bir "... karar
+    # verilmistir" cumlesi + bir tablo. parse_document() boyle belgelerde
+    # 0 blok doner ve belge sessizce indeksten duser (chunk_count=0). Bu,
+    # tam da bu tur belgelerin tasidigi guncel sayisal degerleri (ornegin
+    # yillik bedel tablosu) aramadan tamamen kaybeder. MADDE-yapili
+    # belgeler icin bu fallback devreye girmez (blocks bos degilse
+    # atlanir), sadece yapisiz "karar" belgeleri icin tum metni tek bir
+    # chunk olarak korur.
+    if not blocks and doc_meta.doc_type == "karar" and raw_text.strip():
+        fallback_text = raw_text.strip()
+        fallback_prefix = f"{doc_meta.title}: "
+        chunks = _split_oversized_chunks(
+            [
+                ChunkRecord(
+                    chunk_id=f"{doc_meta.doc_id}::tam",
+                    doc_id=doc_meta.doc_id,
+                    madde_kind="BELGE",
+                    madde_no="-",
+                    madde_baslik=None,
+                    bolum=None,
+                    fikra_no=None,
+                    bent_no=None,
+                    section=None,
+                    text=fallback_text,
+                    embedding_text=f"{fallback_prefix}{fallback_text}",
+                )
+            ]
+        )
+
     appendix_records = extract_appendices(raw_text)
     appendix_chunks: list[ChunkRecord] = []
     for i, ap in enumerate(appendix_records):

@@ -79,7 +79,17 @@ def _extract_docx(path: Path) -> str:
     from docx import Document
 
     doc = Document(str(path))
-    return "\n".join(p.text for p in doc.paragraphs)
+    lines = [p.text for p in doc.paragraphs]
+    # python-docx paragraphs atlar tablolari - bazi Kurul Karari belgeleri
+    # (orn. yillik ucret/bedel guncellemeleri) gercek degerleri SADECE bir
+    # tabloda tasir, govde metninde hic gecmez. Tablo satirlarini hucre
+    # hucre birlestirip metne ekleyerek bu veri kaybini onluyoruz.
+    for table in doc.tables:
+        for row in table.rows:
+            cells = [c.text.strip() for c in row.cells]
+            if any(cells):
+                lines.append(" | ".join(cells))
+    return "\n".join(lines)
 
 
 def _find_soffice() -> str:
