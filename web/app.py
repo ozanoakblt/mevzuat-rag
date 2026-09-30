@@ -15,8 +15,10 @@ sunucu açılışı birkaç saniye sürer.
 """
 from __future__ import annotations
 
+import json
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -39,17 +41,27 @@ from pydantic import BaseModel
 from src.embedding.embedder import Embedder
 from src.embedding.vector_store import VectorStore, load_all_chunks
 from src.generation.answer_generator import generate_answer
+from src.generation.applicability_checker import check_applicability
 from src.generation.citation_guard import format_guard_warnings, run_guard
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.hybrid import hybrid_search
-from src.retrieval.query_expansion import expand_query
+from src.retrieval.query_expansion import (
+    QUERY_TYPE_PREFERRED_DOC_TYPES,
+    expand_query,
+    get_query_type,
+)
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = ROOT / "data" / "processed"
 VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+# Kullanicinin 👍/👎 geri bildirimini kalici olarak biriktirir - onceden
+# arayuzdeki oy butonlari sadece gorsel bir CSS class toggle'iydi, hicbir
+# yere kaydedilmiyordu (gercek kullanim verisi tamamen kayboluyordu).
+# JSONL: her satir bagimsiz bir kayit, append-only, kolayca analiz edilir.
+FEEDBACK_LOG_PATH = ROOT / "data" / "user_feedback.jsonl"
 
 CANDIDATE_POOL_SIZE = 30
 FINAL_TOP_K = 8
@@ -58,6 +70,14 @@ FINAL_TOP_K = 8
 # tutuluyor (bkz. scripts/sync_eval_retrieval_logic.py gecmisi).
 GUARD_ROUND_ROBIN_DEPTH = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
+DOC_TYPES = {s.doc_id: s.doc_type for s in SOURCES}
+# "guncel_deger" (yillik limit/bedel/tarife) tipi sorularda Kurul Karari
+# turu kaynaklari one cikarmak icin carpan - bkz. query_expansion.py'deki
+# QUERY_TYPE_PREFERRED_DOC_TYPES. Gercek bir vakada tespit edildi (EPDK
+# sinav testi, Soru 5): "2026 limiti nedir" sorusu Yonetmelik/Kanun'da hic
+# yok, sadece yillik Kurul Kararlarinda - ama retrieval tum kaynak
+# turlerini esit agirlikta ariyordu.
+DOC_TYPE_BOOST_MULTIPLIER = 1.5
 
 # --- Bileşenler: sunucu başlarken bir kez yüklenir ---
 _state: dict = {}
@@ -108,6 +128,14 @@ class AskResponse(BaseModel):
     warnings: str
 
 
+class FeedbackRequest(BaseModel):
+    question: str
+    answer: str
+    vote: str  # "up" | "down"
+    confidence_level: str | None = None
+    source_count: int = 0
+
+
 @app.post("/api/ask", response_model=AskResponse)
 def ask(req: AskRequest) -> AskResponse:
     question = req.question.strip()
@@ -122,6 +150,9 @@ def ask(req: AskRequest) -> AskResponse:
         )
 
     sub_queries = expand_query(question, embedder=_state["embedder"])
+    query_type = get_query_type(question, embedder=_state["embedder"])
+    preferred_doc_types = QUERY_TYPE_PREFERRED_DOC_TYPES.get(query_type, [])
+
     candidates_by_id: dict[str, dict] = {}
     per_query_results: list[list[dict]] = []
     for sq in sub_queries:
@@ -132,6 +163,11 @@ def ask(req: AskRequest) -> AskResponse:
             _state["bm25_index"],
             top_k=CANDIDATE_POOL_SIZE,
         )
+        if preferred_doc_types:
+            for r in sq_results:
+                if DOC_TYPES.get(r.get("doc_id")) in preferred_doc_types:
+                    r["rrf_score"] *= DOC_TYPE_BOOST_MULTIPLIER
+            sq_results.sort(key=lambda r: r["rrf_score"], reverse=True)
         per_query_results.append(sq_results)
         for r in sq_results:
             cid = r["chunk_id"]
@@ -195,6 +231,7 @@ def ask(req: AskRequest) -> AskResponse:
         print("=" * 60)
         raise
     guard = run_guard(answer, top_chunks)
+    applicability = check_applicability(question, answer)
 
     sources = [
         SourceOut(
@@ -210,12 +247,39 @@ def ask(req: AskRequest) -> AskResponse:
         for c in top_chunks
     ]
 
+    warnings = format_guard_warnings(guard)
+    is_low_confidence = guard.is_low_confidence
+    if not applicability.applicable:
+        is_low_confidence = True
+        reason_suffix = f" ({applicability.reason})" if applicability.reason else ""
+        warnings = (
+            warnings + "\n" if warnings else ""
+        ) + f"UYARI - UYGULANABİLİRLİK: Bulunan hükümler, sorudaki spesifik durumla tam örtüşmüyor olabilir{reason_suffix}. Kaynakları dikkatle kontrol edin."
+
     return AskResponse(
         answer=answer,
         sources=sources,
-        confidence_level="low" if guard.is_low_confidence else "high",
-        warnings=format_guard_warnings(guard),
+        confidence_level="low" if is_low_confidence else "high",
+        warnings=warnings,
     )
+
+
+@app.post("/api/feedback")
+def feedback(req: FeedbackRequest) -> dict:
+    if req.vote not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="vote 'up' veya 'down' olmalı.")
+    FEEDBACK_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "question": req.question,
+        "answer": req.answer,
+        "vote": req.vote,
+        "confidence_level": req.confidence_level,
+        "source_count": req.source_count,
+    }
+    with open(FEEDBACK_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    return {"status": "ok"}
 
 
 @app.get("/api/health")

@@ -12,16 +12,44 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+
+def _turkish_upper(s: str) -> str:
+    """
+    Python'un varsayilan str.upper()'i Turkce'ye ozgu degil: kucuk "i"yi
+    ASCII "I"ya cevirir, oysa doğrusu noktali "İ"dir (orn. "geçici".upper()
+    -> "GEÇICI", olmasi gereken "GEÇİCİ"). "i" harfini once "İ"ye,
+    "ı"yi "I"ya cevirip sonra genel upper() uygulamak (diger harfler icin
+    -c/g/o/s/u zaten dogru donusuyor) bu sorunu cozer.
+    """
+    return s.replace("i", "İ").replace("ı", "I").upper()
+
+
 # --- Bölüm başlığı: "BİRİNCİ BÖLÜM", "İKİNCİ BÖLÜM" vb. ---
 _BOLUM_ORDINALS = (
     "BİRİNCİ|İKİNCİ|ÜÇÜNCÜ|DÖRDÜNCÜ|BEŞİNCİ|ALTINCI|YEDİNCİ|SEKİZİNCİ|"
     "DOKUZUNCU|ONUNCU"
 )
-BOLUM_RE = re.compile(rf"^({_BOLUM_ORDINALS})\s+BÖLÜM\s*$")
+BOLUM_RE = re.compile(rf"^({_BOLUM_ORDINALS})\s+BÖLÜM\s*$", re.IGNORECASE)
 
 # --- Madde başlığı satırı: "MADDE 1 – ...", "GEÇİCİ MADDE 4 – ...", "EK MADDE 1- ..." ---
+# IGNORECASE: Yonetmelik/Usul belgeleri "MADDE" (tam buyuk) kullanirken,
+# Kanun metinleri genelde "Madde" (karisik harf) kullanir - orn. temel
+# Elektrik Piyasasi Kanunu'nun (kanun-4628) TAMAMI "Madde 1 -" formatinda,
+# case-sensitive regex bunu hic yakalamiyordu ve belge sessizce 0 chunk
+# uretip indeksten dusuyordu (628 kaynaktan 441'i bu sekilde etkilenmis
+# olabilir - cogu "taranmis PDF" sanilmisti, gercekte metin mukemmel
+# cikariliyordu, sadece MADDE_RE eslesmiyordu).
+#
+# Tire/baslik kismi ([-–—]\s*(.*)) OPSIYONEL: AB Network Code cevirisi
+# tarzi bazi belgeler (orn. TEIAS'in "iletim sistemi isletimine iliskin
+# kilavuz" serisi) "Madde 1" i satirin TAMAMI olarak yazar, baslik bir
+# SONRAKI satirda gelir, tire hic yok. Yanlis-pozitif riski (bir cumle
+# icinde tesadufen satir sonu "Madde 5" ile bitmesi) dusuk tutuluyor:
+# satirin TAMAMEN sadece "MADDE N" olmasi sart (sonrasinda baska metin
+# varsa bu dal eslesmez, tire'li asil dal denenir).
 MADDE_RE = re.compile(
-    r"^(?:(GEÇİCİ|EK)\s+)?MADDE\s+([0-9]+(?:/[A-ZÇĞİÖŞÜ])?)\s*[-–—]\s*(.*)$"
+    r"^(?:(GEÇİCİ|EK)\s+)?MADDE\s+([0-9]+(?:/[A-ZÇĞİÖŞÜ])?)\s*(?:[-–—]\s*)?(.*)$",
+    re.IGNORECASE,
 )
 
 # --- Fıkra: "(1)", "(2)" ... metin içinde, sayı 1-99 ---
@@ -248,7 +276,13 @@ def parse_document(text: str) -> list[MaddeBlock]:
             continue
 
         kind_prefix, madde_no, rest = groups
-        madde_kind = f"{kind_prefix} MADDE" if kind_prefix else "MADDE"
+        # MADDE_RE artik IGNORECASE - kind_prefix ve madde_no'nun harf soneki
+        # (orn. "10/a") kucuk harfle de gelebilir, kanonik cikti her zaman
+        # buyuk harf olmali. Turkce-guvenli _turkish_upper kullanilir (bkz.
+        # tanimi) - duz .upper() "i"yi "I"ya cevirir, "GEÇİCİ" yerine
+        # yanlis "GEÇICI" uretirdi.
+        madde_no = _turkish_upper(madde_no)
+        madde_kind = f"{_turkish_upper(kind_prefix)} MADDE" if kind_prefix else "MADDE"
 
         # Gövde aralığı: bu sınırdan bir sonraki sınıra kadar.
         next_idx = boundaries[b_i + 1][0] if b_i + 1 < len(boundaries) else n

@@ -90,6 +90,91 @@ def _chunk_id_prefix(doc_id: str, block: MaddeBlock) -> str:
     return f"{doc_id}::{kind_prefix}{block.madde_no}"
 
 
+# Embedding modeli (multilingual-e5-base) 512 token limitine sahip; gercek
+# olcumle Turkce mevzuat metninde ~4.4 karakter/token (bkz. kanun-4628::m5
+# testi: 11423 karakter = 2596 token). Bu esigin UZERINDEKI bir chunk
+# SentenceTransformer tarafindan sessizce KESILIR - iceriginin sonu hic
+# embed edilmez, dense retrieval o kismi asla bulamaz (BM25/sparse
+# etkilenmez, tam metni goruyor, bu yuzden sorun tamamen gorunmez kalabilir).
+# Gercek bir vakada tespit edildi: korpusun >%3'u (1103 chunk) bu esigi
+# asiyordu, bazilari 20K+ karakter. 1800 karakter (~410 token), embedding_
+# text'in basina eklenen prefix (belge>bolum>madde basligi) icin pay
+# birakarak 512 token siniri altinda kalmayi garantiliyor.
+_MAX_EMBEDDING_CHARS = 1800
+
+
+def _greedy_join_split(pieces: list[str], max_chars: int) -> list[str]:
+    """pieces'i, her parca en fazla max_chars olacak sekilde acgozlu birlestirir."""
+    parts: list[str] = []
+    current = ""
+    for piece in pieces:
+        if current and len(current) + len(piece) + 1 > max_chars:
+            parts.append(current.strip())
+            current = piece
+        else:
+            current = f"{current} {piece}".strip() if current else piece
+    if current:
+        parts.append(current.strip())
+    return parts
+
+
+def _split_text_into_parts(text: str, max_chars: int) -> list[str]:
+    """
+    Metni max_chars'i asmayan parcalara boler, kademeli olarak daha
+    agresif ayiricilar dener: once cumle sinirlari (. ! ?), bu yetmezse
+    (gercek bir vakada tespit edildi: bazi "Tanimlar" fikralari virgulle
+    ayrilmis onlarca terimden olusur, neredeyse hic nokta icermez - tek
+    bir "cumle" 21K+ karakter kaliyordu) virgul/noktali virgul, o da
+    yetmezse SON CARE olarak sert karakter siniri (kelime ortasindan
+    kesmek pahasina - bu, hicbir zaman embed edilmemekten iyidir).
+    """
+    if len(text) <= max_chars:
+        return [text]
+    import re
+
+    for pattern in (r"(?<=[.!?])\s+", r"(?<=[,;])\s+"):
+        pieces = re.split(pattern, text)
+        if len(pieces) > 1:
+            parts = _greedy_join_split(pieces, max_chars)
+            if all(len(p) <= max_chars for p in parts):
+                return parts
+
+    # Son care: sert karakter siniri.
+    return [text[i : i + max_chars] for i in range(0, len(text), max_chars)]
+
+
+def _split_oversized_chunks(chunks: list[ChunkRecord]) -> list[ChunkRecord]:
+    result: list[ChunkRecord] = []
+    for c in chunks:
+        if len(c.embedding_text) <= _MAX_EMBEDDING_CHARS or not c.embedding_text.endswith(c.text):
+            result.append(c)
+            continue
+        prefix = c.embedding_text[: len(c.embedding_text) - len(c.text)]
+        text_parts = _split_text_into_parts(c.text, _MAX_EMBEDDING_CHARS - len(prefix))
+        if len(text_parts) <= 1:
+            result.append(c)
+            continue
+        for i, part in enumerate(text_parts, start=1):
+            result.append(
+                ChunkRecord(
+                    chunk_id=f"{c.chunk_id}::p{i}",
+                    doc_id=c.doc_id,
+                    madde_kind=c.madde_kind,
+                    madde_no=c.madde_no,
+                    madde_baslik=c.madde_baslik,
+                    bolum=c.bolum,
+                    fikra_no=c.fikra_no,
+                    bent_no=c.bent_no,
+                    section=c.section,
+                    text=part,
+                    embedding_text=f"{prefix}{part}",
+                    amendment_refs=c.amendment_refs if i == 1 else [],
+                    scenario_tags=c.scenario_tags,
+                )
+            )
+    return result
+
+
 def build_chunks(doc_meta: DocumentMetadata, blocks: list[MaddeBlock]) -> list[ChunkRecord]:
     chunks: list[ChunkRecord] = []
     prefix_base = doc_meta.title
@@ -182,13 +267,16 @@ def build_chunks(doc_meta: DocumentMetadata, blocks: list[MaddeBlock]) -> list[C
                     )
                 )
 
-    return chunks
+    return _split_oversized_chunks(chunks)
 
 
 import re as _re
 
 _EK_HEADER_RE = _re.compile(r"^EK[\s-]?(\d{1,2})\b\s*[:\-\u2013]?\s*(.*)$", _re.IGNORECASE)
-_EK_MAX_CHUNK_CHARS = 4000
+# Eskiden 4000'di - _MAX_EMBEDDING_CHARS ile ayni sebepten (512 token
+# embedding siniri, bkz. o sabitin yorumu) kucultuldu, tutarlilik icin
+# ayni degeri kullaniyor.
+_EK_MAX_CHUNK_CHARS = _MAX_EMBEDDING_CHARS
 
 
 def extract_appendices(raw_text: str) -> list[dict]:
@@ -250,10 +338,11 @@ def parse_and_save(
     chunks = build_chunks(doc_meta, blocks)
 
     appendix_records = extract_appendices(raw_text)
+    appendix_chunks: list[ChunkRecord] = []
     for i, ap in enumerate(appendix_records):
         suffix = f"-p{ap['part']}" if ap["part"] else ""
         chunk_id = f"{doc_meta.doc_id}::ek{ap['ek_no']}{suffix}"
-        chunks.append(
+        appendix_chunks.append(
             ChunkRecord(
                 chunk_id=chunk_id,
                 doc_id=doc_meta.doc_id,
@@ -268,6 +357,11 @@ def parse_and_save(
                 embedding_text=f"{doc_meta.title} > Ek-{ap['ek_no']}: {ap['text']}",
             )
         )
+    # extract_appendices kendi (daha kaba, karakter-siniri) on-bolmesini
+    # yapar ama embedding_text prefix'ini (baslik > Ek-N:) hesaba katmaz -
+    # sonuc yine de _MAX_EMBEDDING_CHARS'i asabilir. Ayni cumle-tabanli
+    # bolme mantigini burada da uygulayarak garanti altina aliyoruz.
+    chunks.extend(_split_oversized_chunks(appendix_chunks))
 
     out = {
         "document": asdict(doc_meta),

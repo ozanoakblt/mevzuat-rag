@@ -6,6 +6,7 @@ const submitEl = document.getElementById("askSubmit");
 const chipsEl = document.getElementById("quickChips");
 const newChatBtn = document.getElementById("newChatBtn");
 const conversationEl = document.getElementById("conversation");
+const historyListEl = document.getElementById("historyList");
 let currentBlockEl = null;
 
 const ICONS = {
@@ -43,12 +44,105 @@ formEl.addEventListener("submit", async (e) => {
 });
 
 newChatBtn.addEventListener("click", () => {
-  qaScrollEl.innerHTML = "";
-  stageEl.classList.remove("chat-active");
-  newChatBtn.hidden = true;
-  resetSourcePanel();
+  startNewConversation();
   inputEl.focus();
 });
+
+document.querySelectorAll(".rail-section-toggle").forEach((toggle) => {
+  toggle.addEventListener("click", () => {
+    const expanded = toggle.getAttribute("aria-expanded") !== "false";
+    toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+  });
+});
+
+/* ============================================================
+   Gecmis sohbetler (localStorage) - bu tarayicida/cihazda kalir,
+   sunucuya gonderilmez.
+   ============================================================ */
+const HISTORY_KEY = "mevzuatHat.history";
+const HISTORY_LIMIT = 30;
+let currentConversation = { id: null, title: null, turns: [] };
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_LIMIT)));
+  } catch {
+    /* localStorage dolu/erisilemez olabilir - sessizce yut, ozellik devre disi kalir */
+  }
+}
+
+function renderHistoryList() {
+  const list = loadHistory();
+  const emptyEl = document.getElementById("historyEmpty");
+  if (!list.length) {
+    historyListEl.innerHTML = `<div class="history-empty" id="historyEmpty">Henuz gecmis sohbet yok.</div>`;
+    return;
+  }
+  historyListEl.innerHTML = list
+    .map(
+      (c) => `<button type="button" class="history-item${c.id === currentConversation.id ? " active" : ""}" data-history-id="${escapeAttr(c.id)}" title="${escapeAttr(c.title)}">${escapeHtml(c.title)}</button>`
+    )
+    .join("");
+}
+
+function startNewConversation() {
+  currentConversation = { id: null, title: null, turns: [] };
+  qaScrollEl.innerHTML = "";
+  stageEl.classList.remove("chat-active");
+  resetSourcePanel();
+  renderHistoryList();
+}
+
+function persistCurrentTurn(question, data) {
+  if (!currentConversation.id) {
+    currentConversation.id = String(Date.now());
+    currentConversation.title = question.length > 60 ? question.slice(0, 57) + "…" : question;
+  }
+  currentConversation.turns.push({ question, data });
+
+  const list = loadHistory().filter((c) => c.id !== currentConversation.id);
+  list.unshift({ ...currentConversation });
+  saveHistory(list);
+  renderHistoryList();
+}
+
+function loadConversation(id) {
+  const list = loadHistory();
+  const conv = list.find((c) => c.id === id);
+  if (!conv) return;
+
+  currentConversation = { id: conv.id, title: conv.title, turns: [...conv.turns] };
+  qaScrollEl.innerHTML = "";
+  stageEl.classList.add("chat-active");
+  conv.turns.forEach(({ question, data }) => {
+    const block = appendQaBlock(question);
+    renderAnswer(block, question, data);
+  });
+  resetSourcePanel();
+  const lastTurn = conv.turns[conv.turns.length - 1];
+  if (lastTurn) {
+    renderSourcePanel(lastTurn.data.sources, qaScrollEl.lastElementChild, lastTurn.data.confidence_level === "low");
+  }
+  renderHistoryList();
+  qaScrollEl.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+historyListEl.addEventListener("click", (e) => {
+  const item = e.target.closest(".history-item");
+  if (!item) return;
+  loadConversation(item.dataset.historyId);
+});
+
+renderHistoryList();
 
 function escapeHtml(str) {
   const div = document.createElement("div");
@@ -194,6 +288,17 @@ qaScrollEl.addEventListener("click", (e) => {
     const row = voteBtn.parentElement;
     row.querySelectorAll("[data-vote]").forEach((b) => b.classList.remove("active"));
     voteBtn.classList.add("active");
+    const block = voteBtn.closest(".qa-block");
+    const fb = block && blockFeedbackData.get(block);
+    if (fb) {
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fb, vote: voteBtn.dataset.vote }),
+      }).catch(() => {
+        /* geri bildirim gonderilemezse sessizce yut - kullanicinin akisini bozma */
+      });
+    }
     return;
   }
   const retryBtn = e.target.closest("[data-retry]");
@@ -226,10 +331,7 @@ qaScrollEl.addEventListener("mouseout", (e) => {
     .forEach((el) => el.classList.remove("hover-highlight"));
 });
 
-async function askQuestion(question) {
-  stageEl.classList.add("chat-active");
-  newChatBtn.hidden = false;
-
+function appendQaBlock(question) {
   const block = document.createElement("div");
   block.className = "qa-block";
   block.innerHTML = `
@@ -241,6 +343,13 @@ async function askQuestion(question) {
       </div>
     </div>`;
   qaScrollEl.appendChild(block);
+  return block;
+}
+
+async function askQuestion(question) {
+  stageEl.classList.add("chat-active");
+
+  const block = appendQaBlock(question);
   inputEl.value = "";
   inputEl.style.height = "auto";
   submitEl.disabled = true;
@@ -259,6 +368,7 @@ async function askQuestion(question) {
     }
     const data = await res.json();
     renderAnswer(block, question, data);
+    persistCurrentTurn(question, data);
   } catch (err) {
     block.querySelector(".answer-block").innerHTML = `
       <div class="warning-line">HATA: ${escapeHtml(err.message || String(err))}</div>`;
@@ -268,8 +378,19 @@ async function askQuestion(question) {
   }
 }
 
+// Oy butonlarina basildiginda /api/feedback'e gonderilecek veriyi tutar -
+// eskiden bu butonlar sadece gorsel bir CSS class toggle'iydi, hicbir
+// yere kaydedilmiyordu (gercek kullanim geri bildirimi tamamen kayboluyordu).
+const blockFeedbackData = new WeakMap();
+
 function renderAnswer(block, question, data) {
   const isLow = data.confidence_level === "low";
+  blockFeedbackData.set(block, {
+    question,
+    answer: data.answer,
+    confidence_level: data.confidence_level,
+    source_count: data.sources.length,
+  });
   const bodyHtml = renderAnswerBody(data.answer);
   const rawForCopy = escapeAttr(data.answer);
   renderSourcePanel(data.sources, block, isLow);

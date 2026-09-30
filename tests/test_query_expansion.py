@@ -7,7 +7,7 @@ import pytest
 
 import src.retrieval.query_expansion as query_expansion
 from src.common.llm_router import LLMError
-from src.retrieval.query_expansion import expand_query
+from src.retrieval.query_expansion import expand_query, get_query_type
 
 
 class FakeEmbedder:
@@ -149,3 +149,51 @@ def test_expand_query_embedder_failure_falls_back_to_llm():
     with patch("src.retrieval.query_expansion.chat_completion_json", return_value=fake_response):
         result = expand_query("herhangi bir soru", embedder=BrokenEmbedder())
     assert result == ["s1", "s2", "s3"]
+
+
+def test_get_query_type_returns_classified_type():
+    fake_response = {"queries": ["s1", "s2", "s3"], "query_type": "guncel_deger"}
+    with patch("src.retrieval.query_expansion.chat_completion_json", return_value=fake_response):
+        result = get_query_type(
+            "2026 serbest tuketici limiti kac kWh?", embedder=FakeEmbedder({"2026 serbest tuketici limiti kac kWh?": [1.0, 0.0]})
+        )
+    assert result == "guncel_deger"
+
+
+def test_get_query_type_defaults_to_genel_hukum_when_missing():
+    fake_response = {"queries": ["s1", "s2", "s3"]}
+    with patch("src.retrieval.query_expansion.chat_completion_json", return_value=fake_response):
+        result = get_query_type("soru", embedder=FakeEmbedder({"soru": [1.0, 0.0]}))
+    assert result == "genel_hukum"
+
+
+def test_get_query_type_rejects_unknown_type_value():
+    fake_response = {"queries": ["s1", "s2", "s3"], "query_type": "gecersiz_deger"}
+    with patch("src.retrieval.query_expansion.chat_completion_json", return_value=fake_response):
+        result = get_query_type("soru", embedder=FakeEmbedder({"soru": [1.0, 0.0]}))
+    assert result == "genel_hukum"
+
+
+def test_get_query_type_fails_open_on_llm_error():
+    with patch(
+        "src.retrieval.query_expansion.chat_completion_json", side_effect=LLMError("rate limit")
+    ):
+        result = get_query_type("soru", embedder=FakeEmbedder({"soru": [1.0, 0.0]}))
+    assert result == "genel_hukum"
+
+
+def test_expand_query_and_get_query_type_share_single_llm_call():
+    # Maliyet kontrolu: ayni soru icin once expand_query, sonra get_query_type
+    # cagrilirsa, ikinci cagri cache'ten okumali - TOPLAM 1 LLM cagrisi
+    # olmali, 2 DEGIL (siniflandirma icin ayri bir cagri EKLENMEMELI).
+    fake_response = {"queries": ["s1", "s2", "s3"], "query_type": "vaka"}
+    embedder = FakeEmbedder({"paylasilan soru": [1.0, 0.0]})
+    with patch(
+        "src.retrieval.query_expansion.chat_completion_json", return_value=fake_response
+    ) as mock_llm:
+        queries = expand_query("paylasilan soru", embedder=embedder)
+        qtype = get_query_type("paylasilan soru", embedder=embedder)
+
+    assert mock_llm.call_count == 1
+    assert queries == ["s1", "s2", "s3"]
+    assert qtype == "vaka"

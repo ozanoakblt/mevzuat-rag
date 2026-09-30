@@ -173,6 +173,39 @@ class VectorStore:
     def count(self) -> int:
         return self._index.ntotal if self._index is not None else 0
 
+    def prune_orphans(self, valid_chunk_ids: set[str]) -> int:
+        """
+        valid_chunk_ids'te olmayan (yani data/processed'dan kaldirilmis
+        kaynaklara ait) index kayitlarini siler. Bir kaynak manifest.json
+        ve data/processed'dan kaldirildiktan sonra, index tam yeniden
+        insa edilmeden (build_index.py, 4-5 saat) once, artik var olmayan
+        belgelere ait "yetim" embeddinglerin hala aranabilir kalmasini
+        onler. Gercek bir vakada tespit edildi: kaldirilmis bir kaynagin
+        (raw-elektrik-sebeke-yonetmeligi) 1400+ yetim chunk'i hala
+        index'te aranabilir durumdaydi ve guncel/dogru bir cevabin
+        (recall-miss vakasi) onune geciyordu.
+
+        Silinen kayit sayisini doner.
+        """
+        if self._index is None:
+            return 0
+        orphan_ids = [
+            fid for cid, fid in self._chunk_id_to_faiss_id.items()
+            if cid not in valid_chunk_ids
+        ]
+        if not orphan_ids:
+            return 0
+        self._index.remove_ids(np.array(orphan_ids, dtype="int64"))
+        orphan_id_set = set(orphan_ids)
+        for fid in orphan_ids:
+            self._records.pop(fid, None)
+        self._chunk_id_to_faiss_id = {
+            cid: fid for cid, fid in self._chunk_id_to_faiss_id.items()
+            if fid not in orphan_id_set
+        }
+        self._save()
+        return len(orphan_ids)
+
 
 def load_all_chunks(processed_dir: str | Path) -> list[dict]:
     """data/processed/*.json icindeki tum chunk'lari tek listede toplar."""

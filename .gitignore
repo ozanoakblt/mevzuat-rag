@@ -7,6 +7,9 @@ vectordb/
 data/vector_store/
 data/token_usage.jsonl
 data/query_expansion_cache.json
+data/user_feedback.jsonl
+data/vector_store_YEDEK_*/
+data/_mislabeled_removed/
 __pycache__/
 *.pyc
 venv/

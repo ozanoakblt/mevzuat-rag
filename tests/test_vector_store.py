@@ -57,3 +57,44 @@ def test_upsert_empty_list_is_noop(tmp_path):
     store = VectorStore(persist_dir=tmp_path / "vs")
     store.upsert_chunks([], [])
     assert store.count() == 0
+
+
+def test_prune_orphans_removes_chunks_not_in_valid_set(tmp_path):
+    store = VectorStore(persist_dir=tmp_path / "vs")
+    other_chunk = {**SAMPLE_CHUNK, "chunk_id": "doc2::m1::f1", "doc_id": "doc2"}
+    store.upsert_chunks(
+        [SAMPLE_CHUNK, other_chunk],
+        [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+    )
+    assert store.count() == 2
+
+    removed = store.prune_orphans(valid_chunk_ids={"doc1::m1::f1"})
+
+    assert removed == 1
+    assert store.count() == 1
+    results = store.query([0.0, 1.0, 0.0], n_results=5)
+    assert all(r["chunk_id"] != "doc2::m1::f1" for r in results)
+
+
+def test_prune_orphans_is_noop_when_nothing_removed(tmp_path):
+    store = VectorStore(persist_dir=tmp_path / "vs")
+    store.upsert_chunks([SAMPLE_CHUNK], [[1.0, 0.0, 0.0]])
+
+    removed = store.prune_orphans(valid_chunk_ids={"doc1::m1::f1"})
+
+    assert removed == 0
+    assert store.count() == 1
+
+
+def test_prune_orphans_persists_after_reload(tmp_path):
+    persist_dir = tmp_path / "vs"
+    store = VectorStore(persist_dir=persist_dir)
+    other_chunk = {**SAMPLE_CHUNK, "chunk_id": "doc2::m1::f1", "doc_id": "doc2"}
+    store.upsert_chunks(
+        [SAMPLE_CHUNK, other_chunk],
+        [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+    )
+    store.prune_orphans(valid_chunk_ids={"doc1::m1::f1"})
+
+    reloaded = VectorStore(persist_dir=persist_dir)
+    assert reloaded.count() == 1

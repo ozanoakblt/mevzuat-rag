@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.generation.answer_generator import _format_context, generate_answer
+from src.generation.answer_generator import SYSTEM_PROMPT, _format_context, generate_answer
 
 SAMPLE_CHUNKS = [
     {
@@ -66,3 +66,23 @@ def test_generate_answer_uses_doc_titles_in_prompt(mock_call):
     )
     user_prompt = mock_call.call_args[0][1]
     assert "6446 Sayılı Elektrik Piyasası Kanunu" in user_prompt
+
+
+def test_system_prompt_has_version_conflict_guidance():
+    # Gercek bir vakadan (EPDK sinav testi, Soru 35): "15 gun" ile "10 is
+    # gunu" celisen iki kaynak buldugunda, sistem sadece "celisiyor"
+    # demek yerine (Mulga:...)/(Degisik:...) notasyonlarini kullanarak
+    # hangisinin muhtemelen guncel oldugunu isaret etmeli.
+    assert "(Mülga:" in SYSTEM_PROMPT
+    assert "(Değişik:RG-" in SYSTEM_PROMPT
+    assert "muhtemelen" in SYSTEM_PROMPT.lower()
+
+
+def test_system_prompt_forbids_scope_widening():
+    # Gercek bir vakada tespit edildi (EPDK sinav testi, Soru 1): model
+    # "10 kW uzerindeki URETIM TESISLERI icin..." kuralini "10 kW
+    # uzerindeki TUM abonelerde..." diye genellemisti - kaynakta olmayan
+    # bir genelleme. Kural 6 (kapsam DARALTMA yasagi) bunun tersini
+    # kapsamiyordu, 6b bu bosluğu kapatir.
+    assert "KAPSAMI GENİŞLETME" in SYSTEM_PROMPT
+    assert "üretim tesisleri" in SYSTEM_PROMPT.lower()

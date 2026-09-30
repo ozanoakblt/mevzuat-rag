@@ -63,8 +63,27 @@ Kullanicinin sorusunu tam olarak SU YAPIYA gore 3 alt-soruya bol:
 3. Ucuncu alt-soru: sureler, istisnalar veya ozel durumlari sor (orn.
    "X icin gecerli sureler ve istisnalar nelerdir").
 
+Ayrica soruyu su UC TIPTEN birine siniflandir (query_type):
+- "guncel_deger": soru GUNCEL/YILLIK bir sayisal deger istiyor (limit, bedel,
+  tarife, ucret, kWh/TL degeri) - bu tur bilgiler genelde Yonetmelik/Kanun'da
+  DEGIL, yillik Kurul Kararlarinda yayimlanir (orn. "2026 serbest tuketici
+  limiti kac kWh?", "teknik kalite olcum bedeli ne kadar?").
+- "vaka": soru somut bir OLAY/SENARYO tarif edip bu olayda ne yapilmasi
+  gerektigini soruyor (orn. "OG bagli bir kullanici sikayet ediyor, ne
+  yapilir?").
+- "genel_hukum": yukaridakilerin disinda kalan genel tanim/kural/surec
+  sorulari.
+
 Sadece su JSON formatinda cevap ver, baska hicbir sey yazma:
-{"queries": ["soru 1", "soru 2", "soru 3"]}"""
+{"queries": ["soru 1", "soru 2", "soru 3"], "query_type": "guncel_deger|vaka|genel_hukum"}"""
+
+# query_type -> retrieval'da agirlik verilecek doc_type'lar (bkz.
+# hybrid.py/web/app.py'deki kullanim). Bos liste = tum turler esit.
+QUERY_TYPE_PREFERRED_DOC_TYPES: dict[str, list[str]] = {
+    "guncel_deger": ["karar"],
+    "vaka": [],
+    "genel_hukum": [],
+}
 
 
 def _cache_key(question: str) -> str:
@@ -93,21 +112,28 @@ def _entry_queries(entry) -> list[str]:
     return entry.get("queries", [])
 
 
-def expand_query(question: str, max_queries: int = 3, embedder=None) -> list[str]:
+def _entry_query_type(entry) -> str:
+    if isinstance(entry, dict):
+        return entry.get("query_type", "genel_hukum")
+    return "genel_hukum"
+
+
+def _expand_and_classify(question: str, embedder=None) -> dict:
     """
-    question icin 1-max_queries arasi alt-soru doner.
+    Tek bir LLM cagrisiyla hem alt-sorulari hem soru tipini uretir/onbellekten
+    okur - iki ayri fonksiyon (expand_query, get_query_type) BU fonksiyonun
+    ustune ince birer sarmalayici, ayni cache girdisini paylasirlar (maliyeti
+    ikiye katlamamak icin - siniflandirma icin AYRI bir LLM cagrisi YAPILMAZ).
 
     Iki katmanli cache: (1) tam eslesme - hizli yol; (2) anlamsal eslesme
-    - embedding benzerligi >= esik ise LLM'e gitmeden onceki alt-sorular
-    kullanilir. Bu, kullanicinin ayni soruyu farkli ifade etmesi
-    durumunda da tutarli sonuc saglar. Embedding hesaplamasi tamamen
-    yerel/ucretsizdir.
+    - embedding benzerligi >= esik ise LLM'e gitmeden onceki sonuc
+    kullanilir. Embedding hesaplamasi tamamen yerel/ucretsizdir.
     """
     cache = _load_cache()
     key = _cache_key(question)
 
     if key in cache:
-        return _entry_queries(cache[key])[:max_queries]
+        return cache[key] if isinstance(cache[key], dict) else {"queries": cache[key]}
 
     query_embedding: list[float] | None = None
     try:
@@ -129,20 +155,41 @@ def expand_query(question: str, max_queries: int = 3, embedder=None) -> list[str
                 best_similarity = similarity
                 best_entry = entry
         if best_entry is not None and best_similarity >= _SIMILARITY_THRESHOLD:
-            return _entry_queries(best_entry)[:max_queries]
+            return best_entry
 
     try:
         result = chat_completion_json(EXPANSION_SYSTEM_PROMPT, question, temperature=0.0)
         queries = result.get("queries", [])
         queries = [q.strip() for q in queries if isinstance(q, str) and q.strip()]
+        query_type = result.get("query_type", "genel_hukum")
+        if query_type not in QUERY_TYPE_PREFERRED_DOC_TYPES:
+            query_type = "genel_hukum"
         if not queries:
-            return [question]
-        cache[key] = {
+            return {"queries": [question], "query_type": query_type}
+        entry = {
             "question": question,
             "embedding": query_embedding,
             "queries": queries,
+            "query_type": query_type,
         }
+        cache[key] = entry
         _save_cache(cache)
-        return queries[:max_queries]
+        return entry
     except LLMError:
-        return [question]
+        return {"queries": [question], "query_type": "genel_hukum"}
+
+
+def expand_query(question: str, max_queries: int = 3, embedder=None) -> list[str]:
+    """question icin 1-max_queries arasi alt-soru doner."""
+    entry = _expand_and_classify(question, embedder=embedder)
+    return _entry_queries(entry)[:max_queries]
+
+
+def get_query_type(question: str, embedder=None) -> str:
+    """
+    Sorunun tipini doner ("guncel_deger" | "vaka" | "genel_hukum") - ayni
+    cache'i expand_query ile paylasir, ekstra bir LLM cagrisi GEREKTIRMEZ
+    (expand_query zaten cagrilmissa bu fonksiyon sadece cache'ten okur).
+    """
+    entry = _expand_and_classify(question, embedder=embedder)
+    return _entry_query_type(entry)

@@ -394,24 +394,8 @@ SOURCES: list[SourceDoc] = [
         notes="EPDK sitesinden bulundu, elle indirildi.",
     ),
     SourceDoc(
-        doc_id="usul-dgp-etiket-smf",
-        title="Dengeleme Guc Piyasasi Kapsaminda Etiket Degerlerinin Belirlenmesi ve Sistem Marjinal Fiyatinin Hesaplanmasi Proseduru",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
         doc_id="usul-teminat-hesaplama-yontemi",
         title="Teminat Hesaplama Yontemi",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
-        doc_id="usul-gop-teklif",
-        title="Gun Oncesi Piyasasi Tekliflerinin Yapisi ve Tekliflerin Degerlendirilmesine Iliskin Usul ve Esaslar",
         url="",
         fetch_type="needs_resolution",
         doc_type="usul-esas",
@@ -466,14 +450,6 @@ SOURCES: list[SourceDoc] = [
         notes="EPDK sitesinden bulundu, elle indirildi.",
     ),
     SourceDoc(
-        doc_id="usul-kayip-katsayilari",
-        title="Kayip Katsayilari Hesaplama Metodolojisine Iliskin Usul ve Esaslar",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
         doc_id="usul-destekleme-bedeli",
         title="Kaynak Bazinda Destekleme Bedelinin Belirlenmesine ve Uygulanmasina Iliskin Usul ve Esaslar",
         url="",
@@ -492,14 +468,6 @@ SOURCES: list[SourceDoc] = [
     SourceDoc(
         doc_id="usul-talep-tarafi-sapma",
         title="Talep Tarafi Katilimi Hizmeti Kapsaminda Temel Tuketim Degerinden Sapma Tutarinin Belirlenmesine Iliskin Usul ve Esaslar",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
-        doc_id="usul-profil-uygulamasi",
-        title="Uzlastirma Hesaplamalarinda Kullanilacak Profil Uygulamasina Iliskin Usul ve Esaslar",
         url="",
         fetch_type="needs_resolution",
         doc_type="usul-esas",
@@ -546,24 +514,8 @@ SOURCES: list[SourceDoc] = [
         notes="EPDK sitesinden bulundu, elle indirildi.",
     ),
     SourceDoc(
-        doc_id="usul-karsiliksiz-islemler",
-        title="Karsiligi Olmayan Piyasa Islemlerine Iliskin Yontem",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
         doc_id="usul-teknik-kalite",
         title="Elektrik Dagitim Sisteminin Teknik Kalitesine Iliskin Usul ve Esaslar",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
-        doc_id="usul-cbs",
-        title="Elektrik Dagitim Sirketleri Tarafindan Kurulan Cografi Bilgi Sistemlerinin Iyilestirilmesine ve Standartlastirilmasina Yonelik Usul ve Esaslar",
         url="",
         fetch_type="needs_resolution",
         doc_type="usul-esas",
@@ -580,14 +532,6 @@ SOURCES: list[SourceDoc] = [
     SourceDoc(
         doc_id="usul-ithalat-ihracat-uzlastirma",
         title="Elektrik Piyasasinda Ithalat ve Ihracata Iliskin Uzlastirma Usul ve Esaslari",
-        url="",
-        fetch_type="needs_resolution",
-        doc_type="usul-esas",
-        notes="EPDK sitesinden bulundu, elle indirildi.",
-    ),
-    SourceDoc(
-        doc_id="usul-hat-katilim-bedeli",
-        title="Hat Katilim Bedelinin Belirlenmesine Dair Usul ve Esaslar",
         url="",
         fetch_type="needs_resolution",
         doc_type="usul-esas",
@@ -5096,6 +5040,20 @@ SOURCES: list[SourceDoc] = [
         fetch_type="direct_file",
         doc_type="bilinmiyor",
         notes="Elle toplu eklendi (bulk_add_raw_sources.py), orijinal dosya adi: Şeritmetre.doc",
+    ),
+    SourceDoc(
+        doc_id="kurul-karari-serbest-tuketici-limiti-2026",
+        title="2026 Yılı İçin Uygulanacak Serbest Tüketici Limiti Hakkında Kurul Kararı",
+        url="https://www.epdk.gov.tr/Detay/DownloadDocument?id=yDs3jv3DbyI=",
+        fetch_type="direct_file",
+        doc_type="karar",
+        notes=(
+            "EPDK resmi sitesi > Mevzuat > Elektrik Piyasasi > Kurul Kararlari > "
+            "Serbest Tuketici sayfasindan elle indirildi (2026-09-30). EPDK sinav "
+            "testinde (Soru 5) eksikligi tespit edilen, yillik guncellenen bir "
+            "Kurul Karari - Yonetmelik/Kanun'da bulunmuyor, sadece bu tur yillik "
+            "kararlarda yer aliyor."
+        ),
     ),
 ]
 
