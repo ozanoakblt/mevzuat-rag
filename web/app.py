@@ -45,12 +45,7 @@ from src.generation.applicability_checker import check_applicability
 from src.generation.citation_guard import format_guard_warnings, run_guard
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
-from src.retrieval.hybrid import hybrid_search
-from src.retrieval.query_expansion import (
-    QUERY_TYPE_PREFERRED_DOC_TYPES,
-    expand_query,
-    get_query_type,
-)
+from src.retrieval.pipeline import retrieve
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,21 +58,11 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 # JSONL: her satir bagimsiz bir kayit, append-only, kolayca analiz edilir.
 FEEDBACK_LOG_PATH = ROOT / "data" / "user_feedback.jsonl"
 
-CANDIDATE_POOL_SIZE = 30
-FINAL_TOP_K = 8
-# bkz. scripts/run_eval.py'deki GUARD_ROUND_ROBIN_DEPTH yorumu - ayni
-# deger, eval ve canli sunum yolunun ayni davranisi vermesi icin senkron
-# tutuluyor (bkz. scripts/sync_eval_retrieval_logic.py gecmisi).
-GUARD_ROUND_ROBIN_DEPTH = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
+# doc_type boost ve diger retrieval sabitleri artik src/retrieval/pipeline.py'de
+# tek bir yerde tutuluyor (bkz. o modulun docstring'i - eskiden web/app.py
+# ve scripts/run_eval.py arasinda surukleme/drift riski vardi).
 DOC_TYPES = {s.doc_id: s.doc_type for s in SOURCES}
-# "guncel_deger" (yillik limit/bedel/tarife) tipi sorularda Kurul Karari
-# turu kaynaklari one cikarmak icin carpan - bkz. query_expansion.py'deki
-# QUERY_TYPE_PREFERRED_DOC_TYPES. Gercek bir vakada tespit edildi (EPDK
-# sinav testi, Soru 5): "2026 limiti nedir" sorusu Yonetmelik/Kanun'da hic
-# yok, sadece yillik Kurul Kararlarinda - ama retrieval tum kaynak
-# turlerini esit agirlikta ariyordu.
-DOC_TYPE_BOOST_MULTIPLIER = 1.5
 
 # --- Bileşenler: sunucu başlarken bir kez yüklenir ---
 _state: dict = {}
@@ -150,74 +135,15 @@ def ask(req: AskRequest) -> AskResponse:
             detail="Vektör index boş. Önce scripts/build_index.py çalıştırın.",
         )
 
-    sub_queries = expand_query(question, embedder=_state["embedder"])
-    query_type = get_query_type(question, embedder=_state["embedder"])
-    preferred_doc_types = QUERY_TYPE_PREFERRED_DOC_TYPES.get(query_type, [])
-
-    candidates_by_id: dict[str, dict] = {}
-    per_query_results: list[list[dict]] = []
-    for sq in sub_queries:
-        sq_results = hybrid_search(
-            sq,
-            _state["embedder"],
-            vector_store,
-            _state["bm25_index"],
-            top_k=CANDIDATE_POOL_SIZE,
-        )
-        if preferred_doc_types:
-            for r in sq_results:
-                if DOC_TYPES.get(r.get("doc_id")) in preferred_doc_types:
-                    r["rrf_score"] *= DOC_TYPE_BOOST_MULTIPLIER
-            sq_results.sort(key=lambda r: r["rrf_score"], reverse=True)
-        per_query_results.append(sq_results)
-        for r in sq_results:
-            cid = r["chunk_id"]
-            if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
-                candidates_by_id[cid] = r
-
-    # Round-robin (nobetlese) oncelik: her alt-sorunun ilk GUARD_ROUND_ROBIN_DEPTH
-    # sonucunu once ekleyerek, hicbir alt-sorunun kendi ust siralarini tek
-    # basina one gecirip diger alt-sorularin gercekten alakali ama daha az
-    # bilinen sonuclarini "kuyrukta" boguntmasini onluyoruz (gercek vakada
-    # tespit edildi: subquery1'in top-N'i guard_pool'un basini kapatinca,
-    # subquery3'un cok daha alakali bir sonucu final listeye hic giremiyordu).
-    # reranker.rerank_with_safety_net artik APPEND semantigine sahip (gercek
-    # sonuclari SILMIYOR, sadece eksik olanlari sona ekliyor) - bu yuzden
-    # derinligi buyutmenin recall acisindan riski yok (52 soruluk retrieval-
-    # only sweep: derinlik 1 -> recall %87.0, derinlik 8 -> %95.65, 13'e
-    # cikmanin ek faydasi yok - 8'de plato).
-    guard_ids: list[str] = []
-    for i in range(GUARD_ROUND_ROBIN_DEPTH):
-        for sq_results in per_query_results:
-            if i < len(sq_results):
-                cid = sq_results[i]["chunk_id"]
-                if cid not in guard_ids:
-                    guard_ids.append(cid)
-    candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
-    guard_pool = [candidates_by_id[cid] for cid in guard_ids]
-    top_chunks = _state["reranker"].rerank_with_safety_net(
-        question, candidates, top_k=FINAL_TOP_K, guard_pool=guard_pool
+    retrieval = retrieve(
+        question,
+        _state["embedder"],
+        vector_store,
+        _state["bm25_index"],
+        _state["reranker"],
+        doc_types=DOC_TYPES,
     )
-
-    existing_ids = {c["chunk_id"] for c in top_chunks}
-    ek_keys_selected = {
-        (c["doc_id"], c["madde_no"])
-        for c in top_chunks
-        if c.get("madde_kind") == "EK"
-    }
-    if ek_keys_selected:
-        extra_ek_chunks = [
-            c
-            for c in candidates
-            if c.get("madde_kind") == "EK"
-            and (c["doc_id"], c["madde_no"]) in ek_keys_selected
-            and c["chunk_id"] not in existing_ids
-        ]
-        if extra_ek_chunks:
-            for c in extra_ek_chunks:
-                c.setdefault("rerank_score", 0.0)
-            top_chunks = top_chunks + extra_ek_chunks
-            existing_ids.update(c["chunk_id"] for c in extra_ek_chunks)
+    top_chunks = retrieval.chunks
 
     try:
         answer = generate_answer(question, top_chunks, doc_titles=DOC_TITLES)

@@ -35,8 +35,7 @@ from src.generation.answer_generator import generate_answer
 from src.generation.citation_guard import LOW_CONFIDENCE_RERANK_THRESHOLD, run_guard
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
-from src.retrieval.hybrid import hybrid_search
-from src.retrieval.query_expansion import expand_query
+from src.retrieval.pipeline import FINAL_TOP_K, retrieve
 import time
 
 from src.retrieval.reranker import Reranker
@@ -47,18 +46,13 @@ VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
 EVAL_SET_PATH = ROOT / "eval" / "eval_set.json"
 RESULTS_PATH = ROOT / "eval" / "results.json"
 
-CANDIDATE_POOL_SIZE = 30
-FINAL_TOP_K = 8
-# guard_pool round-robin derinligi: her alt-sorgudan ilk N sonuc guard_pool'a
-# girer. reranker.rerank_with_safety_net artik APPEND semantigine sahip
-# (bkz. reranker.py) - yani guard_pool buyuk olsa bile gercek sonuclari
-# SILMIYOR, sadece eksik olanlari sona ekliyor. Bu yuzden derinligi
-# BUYUTMENIN artik recall acisindan hicbir riski yok (52 soruluk retrieval-
-# only sweep: derinlik 1 -> recall %87.0, derinlik 8 -> %95.65, derinlik
-# 13 -> ayni %95.65 - 8'de plato). 8 secildi: 13 ile ayni recall'i verirken
-# ortalama daha az gereksiz ek pasaj tasiyor (context/token israfi daha az).
-GUARD_ROUND_ROBIN_DEPTH = 8
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
+# Eskiden run_eval.py'de doc-type boost (bkz. pipeline.py) UYGULANMIYORDU,
+# sadece web/app.py'de vardi - yani eval sonuclari canli uygulamanin
+# gercek davranisini yansitmiyordu (gercek bir drift vakasi, bkz.
+# pipeline.py docstring'i). Artik ikisi de ayni retrieve() fonksiyonunu
+# ayni DOC_TYPES haritasiyla cagiriyor.
+DOC_TYPES = {s.doc_id: s.doc_type for s in SOURCES}
 
 
 def _normalize_article(article: str) -> tuple[str, str]:
@@ -67,15 +61,33 @@ def _normalize_article(article: str) -> tuple[str, str]:
     return parts[0], parts[1]
 
 
+def _article_matches(chunk: dict, expected_articles: set[tuple[str, str]]) -> bool:
+    """
+    expected_articles BOS ise (ama expected_documents DOLU) - soru belirli
+    bir maddeye degil, TUM belgeye/konuya isaret ediyor demektir (orn.
+    "teknik kaliteyi bozan unsurlar icin sureler nedir" gibi birden fazla
+    fikraya yayilan sorular, ya da EPDK sinav testinden eklenen 36 soru -
+    bunlarin cogu icin tek bir "dogru madde" belirlemek pratik degildi).
+    Bu durumda MADDE eslesmesi ARANMAZ, sadece doc_id eslesmesi yeterlidir
+    - aksi halde (eski davranis) bos kume hicbir (madde_kind, madde_no)
+    ciftiyle ASLA eslesmez ve soru, retrieval ne kadar iyi olursa olsun
+    HER ZAMAN "miss" sayilirdi (gercek bir vakada tespit edildi: 36 soru
+    expected_articles=[] oldugu icin recall %10'a dusmus gorunuyordu -
+    retrieval degil, olcum yontemi hataliydi).
+    """
+    if not expected_articles:
+        return True
+    return (chunk.get("madde_kind"), chunk.get("madde_no")) in expected_articles
+
+
 def _check_recall(reranked: list[dict], question: dict) -> bool:
     expected_docs = set(question["expected_documents"])
     expected_articles = {_normalize_article(a) for a in question["expected_articles"]}
     if not expected_docs:
         return None  # negatif test sorusu, recall@K uygulanmaz
     for chunk in reranked:
-        if chunk["doc_id"] in expected_docs:
-            if (chunk.get("madde_kind"), chunk.get("madde_no")) in expected_articles:
-                return True
+        if chunk["doc_id"] in expected_docs and _article_matches(chunk, expected_articles):
+            return True
     return False
 
 
@@ -86,9 +98,8 @@ def _find_rank(reranked: list[dict], question: dict) -> int | None:
     if not expected_docs:
         return None
     for i, chunk in enumerate(reranked, 1):
-        if chunk["doc_id"] in expected_docs:
-            if (chunk.get("madde_kind"), chunk.get("madde_no")) in expected_articles:
-                return i
+        if chunk["doc_id"] in expected_docs and _article_matches(chunk, expected_articles):
+            return i
     return None
 
 
@@ -97,61 +108,8 @@ def run_single_question(
 ) -> dict:
     retrieval_start = time.perf_counter()
     q_text = question["question"]
-    sub_queries = expand_query(q_text, embedder=embedder)
-    candidates_by_id: dict[str, dict] = {}
-    per_query_results: list[list[dict]] = []
-    for sq in sub_queries:
-        sq_results = hybrid_search(sq, embedder, vector_store, bm25_index, top_k=CANDIDATE_POOL_SIZE)
-        per_query_results.append(sq_results)
-        for r in sq_results:
-            cid = r["chunk_id"]
-            if cid not in candidates_by_id or r["rrf_score"] > candidates_by_id[cid]["rrf_score"]:
-                candidates_by_id[cid] = r
-
-    # Round-robin guard_pool: her alt-sorgunun EN IYI sonucunu (rank 1) once
-    # ekleyerek, hicbir alt-sorgunun kendi ust siralarini tek basina one
-    # gecirip digerlerini bogmasini onluyoruz (bu round-robin fikri
-    # kasitli - bkz. web/app.py'deki ayni mantigin yorumu, gercek bir
-    # subquery-acligi vakasinda eklendi). ONCEKI SURUM derinligi 13'e
-    # kadar cikarmisti (3 alt-sorgu x 13 = 30+ chunk'a kadar guard_pool) -
-    # bu, final-8 listesinin cogunu (gercek vakada 5-7/8 slotu) reranker
-    # skoruna bakilmaksizin "kurtarilmis" doldurma ile eziyor, gercekten
-    # iyi siralanmis adaylari disari itiyordu (bkz. q14/q16 recall-miss
-    # teshisi). Derinlik 1'e indirildi: guard_top_n=3'un (reranker.py'nin
-    # kendi varsayilan tasarim niyeti) ruhuna sadik - her alt-sorgudan
-    # sadece EN IYI sonuc garanti ediliyor, kuyruk tikanikligi onleniyor
-    # ama guard_pool artik final listeyi domine edecek kadar buyumuyor.
-    guard_ids: list[str] = []
-    for i in range(GUARD_ROUND_ROBIN_DEPTH):
-        for sq_results in per_query_results:
-            if i < len(sq_results):
-                cid = sq_results[i]["chunk_id"]
-                if cid not in guard_ids:
-                    guard_ids.append(cid)
-
-    candidates = sorted(candidates_by_id.values(), key=lambda c: c["rrf_score"], reverse=True)
-    guard_pool = [candidates_by_id[cid] for cid in guard_ids]
-    reranked = reranker.rerank_with_safety_net(
-        q_text, candidates, top_k=FINAL_TOP_K, guard_pool=guard_pool
-    )
-
-    existing_ids = {c["chunk_id"] for c in reranked}
-    ek_keys_selected = {
-        (c["doc_id"], c["madde_no"]) for c in reranked if c.get("madde_kind") == "EK"
-    }
-    if ek_keys_selected:
-        extra_ek_chunks = [
-            c for c in candidates
-            if c.get("madde_kind") == "EK"
-            and (c["doc_id"], c["madde_no"]) in ek_keys_selected
-            and c["chunk_id"] not in existing_ids
-        ]
-        if extra_ek_chunks:
-            for c in extra_ek_chunks:
-                c.setdefault("rerank_score", 0.0)
-            reranked = reranked + extra_ek_chunks
-            existing_ids.update(c["chunk_id"] for c in extra_ek_chunks)
-
+    retrieval = retrieve(q_text, embedder, vector_store, bm25_index, reranker, doc_types=DOC_TYPES)
+    reranked = retrieval.chunks
     retrieval_latency = time.perf_counter() - retrieval_start
 
     is_negative_test = not question["expected_documents"]
@@ -233,7 +191,11 @@ def summarize(results: list[dict]) -> dict:
                     summary[f"recall_at_{k}_{diff}"] = _recall_at_k(subset, k)
         summary["mrr"] = _mrr_at_k(positive)
         summary["mrr_at_5"] = _mrr_at_k(positive, k=5)
-        summary["mrr_at_8"] = _mrr_at_k(positive, k=FINAL_TOP_K)
+        # Anahtar adi sabit "mrr_at_8" DEGIL, FINAL_TOP_K'ye gore dinamik -
+        # aksi halde FINAL_TOP_K degisince (bkz. yukaridaki yorum: 8'den
+        # 10'a cikarildi) tam bugunku "recall_at_5" yanlis adlandirma
+        # hatasinin aynisini mrr icin tekrarlardik.
+        summary[f"mrr_at_{FINAL_TOP_K}"] = _mrr_at_k(positive, k=FINAL_TOP_K)
 
     retrieval_latencies = [
         r["retrieval_latency_seconds"] for r in results if "retrieval_latency_seconds" in r

@@ -63,6 +63,27 @@ def test_check_recall_negative_question_returns_none():
     assert run_eval._check_recall(reranked, QUESTION_NEGATIVE) is None
 
 
+QUESTION_DOC_LEVEL_ONLY = {
+    "expected_documents": ["doc1"],
+    "expected_articles": [],
+}
+
+
+def test_check_recall_doc_level_only_matches_any_article():
+    # Gercek bir vakada tespit edildi: expected_documents DOLU ama
+    # expected_articles BOS olan 36 soru (EPDK sinav testi, tek bir
+    # maddeye indirgenemeyen konular) HER ZAMAN miss sayiliyordu - bos
+    # kume hicbir (madde_kind, madde_no) ciftiyle eslesemiyordu. Artik
+    # expected_articles bossa SADECE doc_id eslesmesi yeterli.
+    reranked = [{"doc_id": "doc1", "madde_kind": "MADDE", "madde_no": "42"}]
+    assert run_eval._check_recall(reranked, QUESTION_DOC_LEVEL_ONLY) is True
+
+
+def test_check_recall_doc_level_only_still_requires_correct_doc():
+    reranked = [{"doc_id": "doc2", "madde_kind": "MADDE", "madde_no": "9"}]
+    assert run_eval._check_recall(reranked, QUESTION_DOC_LEVEL_ONLY) is False
+
+
 def test_summarize_computes_recall_by_difficulty():
     results = [
         {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 2},
@@ -70,25 +91,27 @@ def test_summarize_computes_recall_by_difficulty():
         {"is_negative_test": False, "difficulty": "zor", "recall_hit": True, "recall_rank": 1},
     ]
     summary = run_eval.summarize(results)
-    # recall@8 (FINAL_TOP_K) - eskiden yanlislikla "recall_at_5" diye
+    # recall@FINAL_TOP_K - eskiden yanlislikla "recall_at_5" diye
     # adlandirilan metrik budur (bkz. run_eval.py yorumu).
-    assert summary["recall_at_8_kolay"] == 0.5
-    assert summary["recall_at_8_zor"] == 1.0
-    assert summary["recall_at_8_overall"] == pytest_approx(2 / 3)
+    top_k_key = f"recall_at_{run_eval.FINAL_TOP_K}"
+    assert summary[f"{top_k_key}_kolay"] == 0.5
+    assert summary[f"{top_k_key}_zor"] == 1.0
+    assert summary[f"{top_k_key}_overall"] == pytest_approx(2 / 3)
 
 
 def test_summarize_recall_at_k_uses_rank_not_just_hit_flag():
-    # rank=6, k=5 icin MISS olmali (recall_hit=True olsa bile, cunku hit
-    # FINAL_TOP_K=8 dahilinde ama ilk 5'te degil) - bu, K etiketinin
-    # anlamli olmasini saglayan asil davranis degisikligi.
+    # rank=FINAL_TOP_K-1, k=5 icin MISS olmali (recall_hit=True olsa bile,
+    # cunku hit FINAL_TOP_K dahilinde ama ilk 5'te degil) - bu, K
+    # etiketinin anlamli olmasini saglayan asil davranis degisikligi.
+    borderline_rank = run_eval.FINAL_TOP_K - 1
     results = [
         {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 1},
-        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 6},
+        {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": borderline_rank},
     ]
     summary = run_eval.summarize(results)
     assert summary["recall_at_1_overall"] == 0.5
     assert summary["recall_at_5_overall"] == 0.5
-    assert summary["recall_at_8_overall"] == 1.0
+    assert summary[f"recall_at_{run_eval.FINAL_TOP_K}_overall"] == 1.0
 
 
 def pytest_approx(x, tol=1e-9):
@@ -174,6 +197,14 @@ def test_find_rank_returns_position_when_third():
     assert run_eval._find_rank(reranked, QUESTION_POSITIVE) == 3
 
 
+def test_find_rank_doc_level_only_matches_any_article():
+    reranked = [
+        {"doc_id": "docX", "madde_kind": "MADDE", "madde_no": "1"},
+        {"doc_id": "doc1", "madde_kind": "MADDE", "madde_no": "42"},
+    ]
+    assert run_eval._find_rank(reranked, QUESTION_DOC_LEVEL_ONLY) == 2
+
+
 def test_find_rank_returns_none_when_not_found():
     reranked = [{"doc_id": "doc2", "madde_kind": "MADDE", "madde_no": "9"}]
     assert run_eval._find_rank(reranked, QUESTION_POSITIVE) is None
@@ -196,14 +227,16 @@ def test_summarize_computes_mrr():
 
 def test_summarize_computes_mrr_at_k_caps_ranks_beyond_k():
     # rank=6 icin mrr_at_5 katkisi 0 olmali (5'i asiyor), ama genel mrr'a
-    # (k=None, sinirsiz) 1/6 olarak katkida bulunmali.
+    # (k=None, sinirsiz) ve mrr_at_{FINAL_TOP_K}'ye 1/6 olarak katkida
+    # bulunmali (FINAL_TOP_K >= 6 oldugu surece).
+    assert run_eval.FINAL_TOP_K >= 6
     results = [
         {"is_negative_test": False, "difficulty": "kolay", "recall_hit": True, "recall_rank": 6},
     ]
     summary = run_eval.summarize(results)
     assert summary["mrr_at_5"] == 0.0
     assert abs(summary["mrr"] - (1 / 6)) < 1e-9
-    assert abs(summary["mrr_at_8"] - (1 / 6)) < 1e-9
+    assert abs(summary[f"mrr_at_{run_eval.FINAL_TOP_K}"] - (1 / 6)) < 1e-9
 
 
 def test_summarize_computes_average_latencies():

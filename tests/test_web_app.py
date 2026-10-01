@@ -6,6 +6,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.generation.applicability_checker import ApplicabilityResult
+from src.retrieval.pipeline import RetrievalResult
 
 _spec = importlib.util.spec_from_file_location(
     "web_app", Path(__file__).resolve().parent.parent / "web" / "app.py"
@@ -50,6 +51,7 @@ def test_ask_happy_path_returns_structured_response():
     web_app._state["vector_store"] = FakeVectorStore()
     web_app._state["embedder"] = object()
     web_app._state["bm25_index"] = object()
+    web_app._state["reranker"] = object()
 
     fake_chunk = {
         "chunk_id": "doc1::m1",
@@ -64,17 +66,12 @@ def test_ask_happy_path_returns_structured_response():
         "rrf_score": 0.05,
     }
 
-    class FakeReranker:
-        def rerank_with_safety_net(self, query, candidates, top_k=5, guard_pool=None):
-            return [fake_chunk]
-
-    web_app._state["reranker"] = FakeReranker()
-
+    fake_retrieval = RetrievalResult(
+        chunks=[fake_chunk], query_type=None, sub_queries=["test sorusu"]
+    )
     fake_applicability = ApplicabilityResult(applicable=True, reason="", checked=True)
-    with patch.object(web_app, "hybrid_search", return_value=[fake_chunk]), patch.object(
+    with patch.object(web_app, "retrieve", return_value=fake_retrieval), patch.object(
         web_app, "generate_answer", return_value="Test cevabı [1]."
-    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]), patch.object(
-        web_app, "get_query_type", return_value="genel_hukum"
     ), patch.object(
         web_app, "check_applicability", return_value=fake_applicability
     ):
@@ -94,6 +91,7 @@ def test_ask_flags_low_confidence_when_applicability_check_fails():
     web_app._state["vector_store"] = FakeVectorStore()
     web_app._state["embedder"] = object()
     web_app._state["bm25_index"] = object()
+    web_app._state["reranker"] = object()
 
     fake_chunk = {
         "chunk_id": "doc1::m1",
@@ -108,23 +106,18 @@ def test_ask_flags_low_confidence_when_applicability_check_fails():
         "rrf_score": 0.05,
     }
 
-    class FakeReranker:
-        def rerank_with_safety_net(self, query, candidates, top_k=5, guard_pool=None):
-            return [fake_chunk]
-
-    web_app._state["reranker"] = FakeReranker()
-
+    fake_retrieval = RetrievalResult(
+        chunks=[fake_chunk], query_type=None, sub_queries=["test sorusu"]
+    )
     mismatched = ApplicabilityResult(
         applicable=False,
         reason="Soru kullanici kaynakli olmayan bir ariza tarif ediyor ama cevap kullanici kaynakli bozulma hukmunu uyguluyor.",
         checked=True,
     )
-    with patch.object(web_app, "hybrid_search", return_value=[fake_chunk]), patch.object(
+    with patch.object(web_app, "retrieve", return_value=fake_retrieval), patch.object(
         web_app,
         "generate_answer",
         return_value='90 gun icinde giderilir [1].\nKaynak Alıntıları:\n[1]: "Kullanici kaynakli bozulma 90 gun icinde giderilir."',
-    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]), patch.object(
-        web_app, "get_query_type", return_value="genel_hukum"
     ), patch.object(
         web_app, "check_applicability", return_value=mismatched
     ):
@@ -146,6 +139,7 @@ def test_ask_notes_when_applicability_check_could_not_run():
     web_app._state["vector_store"] = FakeVectorStore()
     web_app._state["embedder"] = object()
     web_app._state["bm25_index"] = object()
+    web_app._state["reranker"] = object()
 
     fake_chunk = {
         "chunk_id": "doc1::m1",
@@ -160,17 +154,12 @@ def test_ask_notes_when_applicability_check_could_not_run():
         "rrf_score": 0.05,
     }
 
-    class FakeReranker:
-        def rerank_with_safety_net(self, query, candidates, top_k=5, guard_pool=None):
-            return [fake_chunk]
-
-    web_app._state["reranker"] = FakeReranker()
-
+    fake_retrieval = RetrievalResult(
+        chunks=[fake_chunk], query_type=None, sub_queries=["test sorusu"]
+    )
     unchecked = ApplicabilityResult(applicable=None, reason="", checked=False)
-    with patch.object(web_app, "hybrid_search", return_value=[fake_chunk]), patch.object(
+    with patch.object(web_app, "retrieve", return_value=fake_retrieval), patch.object(
         web_app, "generate_answer", return_value="Test cevabı [1]."
-    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]), patch.object(
-        web_app, "get_query_type", return_value="genel_hukum"
     ), patch.object(
         web_app, "check_applicability", return_value=unchecked
     ):
@@ -180,19 +169,18 @@ def test_ask_notes_when_applicability_check_could_not_run():
     assert "UYGULANABİLİRLİK KONTROLÜ ÇALIŞTIRILAMADI" in result.warnings
 
 
-def test_ask_boosts_preferred_doc_type_for_guncel_deger_queries():
-    # Gercek bir vakadan (EPDK sinav testi, Soru 5): "2026 limiti nedir"
-    # gibi sorular sadece yillik Kurul Kararlarinda bulunuyor, Yonetmelik/
-    # Kanun'da degil - query_type="guncel_deger" oldugunda "karar" turu
-    # kaynaklarin rrf_score'u artmali.
+def test_ask_passes_doc_types_through_to_retrieve():
+    # Doc-type boost mantiginin kendisi artik src/retrieval/pipeline.py'de
+    # yasiyor ve orada dogrudan test ediliyor (bkz.
+    # tests/test_retrieval_pipeline.py::test_retrieve_applies_doc_type_boost_in_expansion_branch).
+    # Burada SADECE web/app.py'nin kendi DOC_TYPES haritasini retrieve()'e
+    # gercekten ilettigini dogruluyoruz.
     web_app._state["vector_store"] = FakeVectorStore()
     web_app._state["embedder"] = object()
     web_app._state["bm25_index"] = object()
-    web_app._state["reranker"] = type(
-        "FakeReranker", (), {"rerank_with_safety_net": lambda self, query, candidates, top_k=5, guard_pool=None: candidates}
-    )()
+    web_app._state["reranker"] = object()
 
-    karar_chunk = {
+    fake_chunk = {
         "chunk_id": "karar1::m1",
         "doc_id": "kurul-karari-serbest-tuketici-limiti-2026",
         "madde_kind": "MADDE",
@@ -202,44 +190,19 @@ def test_ask_boosts_preferred_doc_type_for_guncel_deger_queries():
         "madde_baslik": None,
         "text": "2026 yılı için serbest tüketici limiti 500 kWh olarak uygulanır.",
         "rerank_score": 1.0,
-        "rrf_score": 0.02,
     }
-    yonetmelik_chunk = {
-        "chunk_id": "yonet1::m1",
-        "doc_id": "kanun-6446",
-        "madde_kind": "MADDE",
-        "madde_no": "1",
-        "fikra_no": None,
-        "bent_no": None,
-        "madde_baslik": None,
-        "text": "Alakasiz bir yonetmelik metni.",
-        "rerank_score": 1.0,
-        "rrf_score": 0.021,  # baslangicta karar_chunk'tan hafif yuksek
-    }
-
-    web_app.DOC_TYPES["kurul-karari-serbest-tuketici-limiti-2026"] = "karar"
-    web_app.DOC_TYPES["kanun-6446"] = "kanun"
-
-    original_karar_score = karar_chunk["rrf_score"]
-
-    def fake_hybrid_search(*args, **kwargs):
-        return [karar_chunk, yonetmelik_chunk]
-
+    fake_retrieval = RetrievalResult(
+        chunks=[fake_chunk], query_type="guncel_deger", sub_queries=["q"]
+    )
     fake_applicability = ApplicabilityResult(applicable=True, reason="", checked=True)
-    with patch.object(web_app, "hybrid_search", side_effect=fake_hybrid_search), patch.object(
+    with patch.object(web_app, "retrieve", return_value=fake_retrieval) as mock_retrieve, patch.object(
         web_app, "generate_answer", return_value="Test cevabı [1]."
-    ), patch.object(web_app, "expand_query", return_value=["test sorusu"]), patch.object(
-        web_app, "get_query_type", return_value="guncel_deger"
     ), patch.object(
         web_app, "check_applicability", return_value=fake_applicability
     ):
         web_app.ask(web_app.AskRequest(question="2026 serbest tüketici limiti kaç kWh?"))
 
-    # ask() sirasinda karar_chunk'in rrf_score'u gercekten boost edilmis
-    # (yerinde mutasyonla) ve artik yonetmelik_chunk'i gecmis olmali -
-    # boostsuz durumda yonetmelik_chunk hafif onde basliyordu (0.021 > 0.02).
-    assert karar_chunk["rrf_score"] == original_karar_score * web_app.DOC_TYPE_BOOST_MULTIPLIER
-    assert karar_chunk["rrf_score"] > yonetmelik_chunk["rrf_score"]
+    assert mock_retrieve.call_args.kwargs["doc_types"] is web_app.DOC_TYPES
 
 
 def test_feedback_rejects_invalid_vote_value():
