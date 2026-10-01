@@ -6,7 +6,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.generation.applicability_checker import ApplicabilityResult
+from src.generation.claim_verifier import ClaimCheck, ClaimVerificationResult
 from src.retrieval.pipeline import RetrievalResult
+
+NO_CLAIM_ISSUES = ClaimVerificationResult(claims=[], checked=True)
 
 _spec = importlib.util.spec_from_file_location(
     "web_app", Path(__file__).resolve().parent.parent / "web" / "app.py"
@@ -74,6 +77,8 @@ def test_ask_happy_path_returns_structured_response():
         web_app, "generate_answer", return_value="Test cevabı [1]."
     ), patch.object(
         web_app, "check_applicability", return_value=fake_applicability
+    ), patch.object(
+        web_app, "verify_claims", return_value=NO_CLAIM_ISSUES
     ):
         result = web_app.ask(web_app.AskRequest(question="test sorusu"))
 
@@ -120,6 +125,8 @@ def test_ask_flags_low_confidence_when_applicability_check_fails():
         return_value='90 gun icinde giderilir [1].\nKaynak Alıntıları:\n[1]: "Kullanici kaynakli bozulma 90 gun icinde giderilir."',
     ), patch.object(
         web_app, "check_applicability", return_value=mismatched
+    ), patch.object(
+        web_app, "verify_claims", return_value=NO_CLAIM_ISSUES
     ):
         result = web_app.ask(
             web_app.AskRequest(question="Kullanici kaynakli OLMAYAN bir ariza durumunda ne yapilir?")
@@ -162,11 +169,66 @@ def test_ask_notes_when_applicability_check_could_not_run():
         web_app, "generate_answer", return_value="Test cevabı [1]."
     ), patch.object(
         web_app, "check_applicability", return_value=unchecked
+    ), patch.object(
+        web_app, "verify_claims", return_value=NO_CLAIM_ISSUES
     ):
         result = web_app.ask(web_app.AskRequest(question="test sorusu"))
 
     assert result.applicability_checked is False
     assert "UYGULANABİLİRLİK KONTROLÜ ÇALIŞTIRILAMADI" in result.warnings
+
+
+def test_ask_flags_low_confidence_when_claim_is_unsupported():
+    # Gercek vakadan (ChatGPT review): citation_guard alintiyi birebir
+    # dogru bulsa ve applicability hukmun olaya uydugunu onaylasa bile,
+    # iddia kaynaktan daha GUCLU/FARKLI bir sey soyluyorsa (orn.
+    # "degerlendirilir" -> "kabul edilir" carpitmasi) bu ayrica
+    # yakalanip dusuk guven tetiklemeli.
+    web_app._state["vector_store"] = FakeVectorStore()
+    web_app._state["embedder"] = object()
+    web_app._state["bm25_index"] = object()
+    web_app._state["reranker"] = object()
+
+    fake_chunk = {
+        "chunk_id": "doc1::m1",
+        "doc_id": "kanun-6446",
+        "madde_kind": "MADDE",
+        "madde_no": "1",
+        "fikra_no": "1",
+        "bent_no": None,
+        "madde_baslik": "Amaç",
+        "text": "Başvuru 7 iş günü içinde değerlendirilir.",
+        "rerank_score": 3.5,
+        "rrf_score": 0.05,
+    }
+    fake_retrieval = RetrievalResult(
+        chunks=[fake_chunk], query_type=None, sub_queries=["test sorusu"]
+    )
+    fake_applicability = ApplicabilityResult(applicable=True, reason="", checked=True)
+    overstated = ClaimVerificationResult(
+        claims=[
+            ClaimCheck(
+                text="Başvurunun kesin olarak kabul edilmesi 7 iş günü içinde tamamlanır.",
+                citation_refs=[1],
+                supported=False,
+                reason="Kaynak 'değerlendirilir' diyor, 'kabul edilir' demiyor.",
+            )
+        ],
+        checked=True,
+    )
+    with patch.object(web_app, "retrieve", return_value=fake_retrieval), patch.object(
+        web_app,
+        "generate_answer",
+        return_value="Başvurunun kesin olarak kabul edilmesi 7 iş günü içinde tamamlanır [1].",
+    ), patch.object(
+        web_app, "check_applicability", return_value=fake_applicability
+    ), patch.object(
+        web_app, "verify_claims", return_value=overstated
+    ):
+        result = web_app.ask(web_app.AskRequest(question="test sorusu"))
+
+    assert result.confidence_level == "low"
+    assert "DESTEKLENMEYEN İDDİA" in result.warnings
 
 
 def test_ask_passes_doc_types_through_to_retrieve():
@@ -199,6 +261,8 @@ def test_ask_passes_doc_types_through_to_retrieve():
         web_app, "generate_answer", return_value="Test cevabı [1]."
     ), patch.object(
         web_app, "check_applicability", return_value=fake_applicability
+    ), patch.object(
+        web_app, "verify_claims", return_value=NO_CLAIM_ISSUES
     ):
         web_app.ask(web_app.AskRequest(question="2026 serbest tüketici limiti kaç kWh?"))
 

@@ -43,6 +43,7 @@ from src.embedding.vector_store import VectorStore, load_all_chunks
 from src.generation.answer_generator import generate_answer
 from src.generation.applicability_checker import check_applicability
 from src.generation.citation_guard import format_guard_warnings, run_guard
+from src.generation.claim_verifier import verify_claims
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.pipeline import retrieve
@@ -119,6 +120,7 @@ class AskResponse(BaseModel):
     confidence_level: str  # "high" | "low"
     warnings: str
     applicability_checked: bool
+    claim_verification_checked: bool
 
 
 class FeedbackRequest(BaseModel):
@@ -167,6 +169,7 @@ def ask(req: AskRequest) -> AskResponse:
         raise
     guard = run_guard(answer, top_chunks)
     applicability = check_applicability(question, answer, retrieved_chunks=top_chunks)
+    claim_verification = verify_claims(answer, top_chunks)
 
     sources = [
         SourceOut(
@@ -201,12 +204,20 @@ def ask(req: AskRequest) -> AskResponse:
             warnings + "\n" if warnings else ""
         ) + "NOT - UYGULANABİLİRLİK KONTROLÜ ÇALIŞTIRILAMADI: Bu cevap için ayrı uygulanabilirlik denetimi yapılamadı, sonuç bu açıdan doğrulanmamıştır."
 
+    if claim_verification.has_unsupported_claims:
+        is_low_confidence = True
+        unsupported_texts = "; ".join(c.text for c in claim_verification.unsupported_claims)
+        warnings = (
+            warnings + "\n" if warnings else ""
+        ) + f"UYARI - DESTEKLENMEYEN İDDİA: Şu iddia(lar) gösterdiği kaynaktan daha güçlü/farklı bir şey söylüyor olabilir: {unsupported_texts}. Kaynak metni dikkatle karşılaştırın."
+
     return AskResponse(
         answer=answer,
         sources=sources,
         confidence_level="low" if is_low_confidence else "high",
         warnings=warnings,
         applicability_checked=applicability.checked,
+        claim_verification_checked=claim_verification.checked,
     )
 
 
