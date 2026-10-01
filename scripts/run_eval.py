@@ -30,16 +30,24 @@ try:
 except ImportError:
     pass
 
+from src.embedding.embedder import DEFAULT_MODEL_NAME as DEFAULT_EMBEDDING_MODEL
 from src.embedding.embedder import Embedder
 from src.embedding.vector_store import VectorStore, load_all_chunks
 from src.generation.answer_generator import generate_answer
 from src.generation.citation_guard import LOW_CONFIDENCE_RERANK_THRESHOLD, run_guard
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
-from src.retrieval.pipeline import FINAL_TOP_K, retrieve
+from src.retrieval.pipeline import (
+    CANDIDATE_POOL_SIZE,
+    DOC_TYPE_BOOST_MULTIPLIER,
+    FINAL_TOP_K,
+    GUARD_ROUND_ROBIN_DEPTH,
+    retrieve,
+)
+import os
 import time
 
-from src.retrieval.reranker import Reranker
+from src.retrieval.reranker import DEFAULT_RERANKER_MODEL, Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = ROOT / "data" / "processed"
@@ -301,6 +309,55 @@ def select_sample(questions: list[dict], n: int) -> list[dict]:
     return sorted(result, key=lambda q: q["id"])[:n]
 
 
+MLFLOW_EXPERIMENT_NAME = "legal-rag-retrieval"
+
+
+def log_to_mlflow(summary: dict, with_generation: bool, question_count: int, run_name: str | None = None) -> None:
+    """
+    Eval kosusunu bir MLflow run'i olarak kaydeder - embedding/reranker
+    modeli, RRF/guard/top-k parametreleri ve summarize()'in tum metrikleri
+    (recall@1/3/5/{FINAL_TOP_K}, MRR, latency, citation groundedness vb.).
+    Boylece farkli reranker/embedding modelleri ya da FINAL_TOP_K gibi
+    parametre degisiklikleri ARASINDA (orn. "BGE reranker mi MiniLM mi
+    daha iyi?") OLCULEBILIR bir karsilastirma yapilabilir - tek seferlik
+    terminal ciktisina gomulup kaybolmak yerine.
+
+    MLflow kurulu degilse ya da herhangi bir sebeple loglama basarisiz
+    olursa (orn. mlruns/ dizinine yazma izni yok), eval SONUCUNU
+    ETKILEMEZ - sadece bir uyari basilir ve devam edilir (projedeki diger
+    "opsiyonel katman basarisiz olursa ana akisi kilitleme" felsefesiyle
+    tutarli, bkz. applicability_checker.py/claim_verifier.py).
+    """
+    try:
+        import mlflow
+    except ImportError:
+        print("UYARI: mlflow kurulu degil, deney takibi atlaniyor (pip install mlflow).")
+        return
+
+    try:
+        # MLflow 3.x dosya-sistemi backend'ini (./mlruns) "bakim modu"na
+        # aldi ve yeni ozellik almiyor - sqlite ise tek dosyali, sunucu
+        # gerektirmeyen, MLflow'un kendi onerdigi zero-config alternatif
+        # (bkz. https://mlflow.org/docs/latest/self-hosting/migrate-from-file-store).
+        mlflow.set_tracking_uri(f"sqlite:///{(ROOT / 'mlflow.db').as_posix()}")
+        mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+        with mlflow.start_run(run_name=run_name):
+            mlflow.log_params({
+                "embedding_model": os.environ.get("EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
+                "reranker_model": os.environ.get("RERANKER_MODEL", DEFAULT_RERANKER_MODEL),
+                "candidate_pool_size": CANDIDATE_POOL_SIZE,
+                "final_top_k": FINAL_TOP_K,
+                "guard_round_robin_depth": GUARD_ROUND_ROBIN_DEPTH,
+                "doc_type_boost_multiplier": DOC_TYPE_BOOST_MULTIPLIER,
+                "with_generation": with_generation,
+                "question_count": question_count,
+            })
+            mlflow.log_metrics({k: v for k, v in summary.items() if isinstance(v, (int, float))})
+        print(f"MLflow run kaydedildi (deney: {MLFLOW_EXPERIMENT_NAME}).")
+    except Exception as exc:  # pragma: no cover - sadece ortam sorunlarinda tetiklenir
+        print(f"UYARI: MLflow loglama basarisiz oldu, eval sonucu etkilenmedi: {exc}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--with-generation", action="store_true")
@@ -325,6 +382,17 @@ def main() -> None:
         type=int,
         default=None,
         help="Tam sette degil, N sorudan olusan dengeli/deterministik bir alt kumede calistir.",
+    )
+    parser.add_argument(
+        "--no-mlflow",
+        action="store_true",
+        help="MLflow deney takibine loglama yapma (varsayilan: loglanir).",
+    )
+    parser.add_argument(
+        "--mlflow-run-name",
+        type=str,
+        default=None,
+        help="MLflow run'ina verilecek isim (orn. 'bge-reranker-denemesi').",
     )
     args = parser.parse_args()
 
@@ -413,6 +481,12 @@ def main() -> None:
         encoding="utf-8",
     )
     print(f"\nDetaylı sonuçlar: {RESULTS_PATH}")
+
+    if not args.no_mlflow:
+        log_to_mlflow(
+            summary, with_generation=args.with_generation,
+            question_count=len(results), run_name=args.mlflow_run_name,
+        )
 
 
 if __name__ == "__main__":

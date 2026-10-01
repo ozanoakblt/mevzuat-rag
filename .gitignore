@@ -21,3 +21,6 @@ logs/
 .pytest_cache/
 .vscode/
 .idea/
+mlruns/
+mlartifacts/
+mlflow.db
