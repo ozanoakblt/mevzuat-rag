@@ -17,20 +17,54 @@ numarası ve alıntı göstererek cevap üretir.
 
 ## Pipeline
 
+```mermaid
+flowchart TD
+    A[Kullanıcı sorusu] --> B[Query expansion + type sınıflandırma<br/>src/retrieval/query_expansion.py]
+    B --> C[Hibrit arama: BM25 + E5 embedding + RRF<br/>src/retrieval/hybrid.py]
+    C --> D[Doc-type boost<br/>'güncel_değer' → karar belgeleri]
+    D --> E[Temporal/version-aware ayarlama<br/>src/retrieval/temporal.py]
+    E --> F[Cross-encoder reranker + guard_pool<br/>güvenlik ağı, src/retrieval/reranker.py]
+    F --> G[LLM cevap üretimi — Groq → Gemini fallback<br/>src/generation/answer_generator.py]
+    G --> H[Citation guard<br/>alıntı doğrulama, sayı/kurum tutarlılığı]
+    G --> I[Applicability checker<br/>doğru hüküm ailesi mi?]
+    G --> J[Claim verifier<br/>iddia kaynağı destekliyor mu?]
+    H --> K[API yanıtı: cevap + kaynaklar + güven seviyesi]
+    I --> K
+    J --> K
+```
 
 - **Ingestion:** `src/ingestion/` — kaynak URL listesinden belge indirir,
   her indirmeden önce `robots.txt` kontrolü yapar, SHA-256 hash ile
   `data/raw/manifest.json`'a kaydeder.
 - **Parsing:** `src/parsing/` — PDF/DOCX belgelerden madde bazlı yapılandırılmış
-  metin çıkarır.
+  metin çıkarır (madde/fıkra/bent hiyerarşisi, Mülga/Değişik notasyonları).
 - **Embedding:** `src/embedding/` — `intfloat/multilingual-e5-base` modeliyle
-  embedding üretir, Chroma vektör veritabanında saklar.
-- **Retrieval:** `src/retrieval/` — BM25 + vektör aramayı birleştiren hibrit
-  arama, ardından `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` ile reranking.
-- **Generation:** `src/generation/` — Groq API üzerinden, sadece getirilen
-  kaynaklara dayanarak (citation guard ile doğrulanmış) cevap üretir.
+  embedding üretir, FAISS vektör indeksinde saklar.
+- **Retrieval:** `src/retrieval/pipeline.py` — tek bir ortak pipeline (hem
+  web hem eval tarafından kullanılır): query expansion → hibrit arama
+  (BM25 + dense + RRF) → doc-type boost (güncel-değer sorularında Kurul
+  Kararı belgelerini önceliklendirir) → temporal/version-aware ayarlama
+  (aynı yönetmeliğin farklı tarihli versiyonları arasında sorudaki tarihe
+  göre seçim) → `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` ile reranking
+  + guard_pool güvenlik ağı (reranker'ın gözden kaçırdığı güçlü hibrit
+  sonuçlarını geri ekler).
+- **Generation:** `src/generation/` — Groq API (Gemini fallback) üzerinden,
+  sadece getirilen kaynaklara dayanarak cevap üretir; üç bağımsız doğrulama
+  katmanı ile denetlenir:
+  - `citation_guard.py` — alıntıların kaynakta birebir var olup olmadığını,
+    sayısal/kurumsal tutarlılığı deterministik (regex) olarak kontrol eder.
+  - `applicability_checker.py` — alıntı doğru olsa bile, kullanılan hükmün
+    sorudaki SPESİFİK senaryoya gerçekten uygulanıp uygulanmadığını (doğru
+    hüküm ailesi mi) ayrı bir LLM çağrısıyla denetler.
+  - `claim_verifier.py` — cevaptaki her iddiayı kaynağından ayrıştırıp,
+    iddianın kaynaktan daha güçlü/farklı bir şey söyleyip söylemediğini
+    (entailment) kontrol eder.
 - **Tagging:** `src/tagging/` — madde metinlerini senaryo bazlı etiketler.
 - **Web:** `web/` — FastAPI backend + statik frontend, sohbet arayüzü.
+- **Evaluation & experiment tracking:** `scripts/run_eval.py` — Recall@K
+  (K=1/3/5/10), MRR, citation groundedness, latency metriklerini ölçer;
+  her koşu otomatik olarak MLflow'a (`mlflow.db`, sqlite backend) bir run
+  olarak kaydedilir — bkz. [Değerlendirme](#değerlendirme).
 
 ## Neden RAG, neden dogrudan bir LLM'e sormuyoruz?
 
@@ -102,10 +136,57 @@ python -m uvicorn web.app:app --reload   # web arayüzünü başlat
 Arayüz: `http://localhost:8000`
 
 ## Değerlendirme
+
 ```bash
-python scripts/run_eval.py
+python scripts/run_eval.py                              # sadece retrieval (hızlı)
+python scripts/run_eval.py --with-generation             # + cevap üretimi/citation guard
+python scripts/run_eval.py --sample 30 --with-generation # dengeli bir alt küme ile hızlı ölçüm
 ```
-Sonuçlar `eval/results.json`'a yazılır.
+Sonuçlar `eval/results.json`'a yazılır. Her koşu ayrıca otomatik olarak
+MLflow'a (sqlite backend, `mlflow.db`) loglanır — parametre/model
+denemelerini (reranker, embedding modeli, `FINAL_TOP_K` vb.) karşılaştırmak
+için:
+```bash
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+### Güncel sonuçlar
+
+**Retrieval (N=92, tam eval seti, sadece retrieval — `scripts/run_eval.py`):**
+
+| Metrik | Değer |
+|---|---:|
+| Recall@1 | 38.4% |
+| Recall@3 | 74.4% |
+| Recall@5 | 84.9% |
+| Recall@10 (final top-K) | 91.9% |
+| MRR | 0.596 |
+| MRR@5 | 0.583 |
+| MRR@10 | 0.592 |
+| Ortalama retrieval gecikmesi | 8.7s |
+
+**Generation (N=30, dengeli örneklem, `--with-generation` — `scripts/run_eval.py --sample 30 --with-generation`):**
+
+| Metrik | Değer |
+|---|---:|
+| Citation groundedness | 90.8% |
+| Ortalama generation gecikmesi | 13.0s |
+| Negative test başarısı | 50% (N=2 — küçük örneklem, tek başına güvenilir değil) |
+
+Negative test başarı oranı burada retrieval skoruna dayanıyor
+(`correct_low_confidence`); canlı sistemde gerçek üretim davranışı
+(`guard_low_confidence`, citation_guard'ın asıl ürettiği sinyal) kullanılır
+ve genelde daha yüksek çıkar — bkz. `scripts/run_eval.py` içindeki
+`summarize()` yorumu. Recall@1'in görece düşük olması (retrieval'in
+"doğru maddeyi bulması" ile "ilk sıraya koyması" arasındaki fark) hâlâ
+açık bir iyileştirme alanı; sistem çoğu zaman doğru maddeyi buluyor ama
+onu her zaman en üste taşıyamıyor.
+
+*Metin açıklaması: Recall@K, beklenen madde/belgenin reranker'ın ilk K
+sonucunda bulunma oranı. "Negative test" soruları, kaynak metinde cevabı
+OLMAYAN sorulardır — başarı ölçütü burada TERS çevrilir: sistemin
+"bulamadım" demesi (düşük güven) başarı sayılır. Tam metodoloji için
+`scripts/run_eval.py`'nin başındaki docstring'e bakın.*
 
 ## Test
 ```bash
@@ -131,6 +212,17 @@ pytest tests/ -v
 - Soru formulasyonuna retrieval performansi hassas olabiliyor; ayni
   konuyu farkli kelimelerle soran ozdes sorular farkli kaynak
   setleri getirebilir.
+- Her soru artik 3 ayri LLM cagrisi gerektirebiliyor (cevap uretimi +
+  applicability_checker + claim_verifier) - bu, dogruluk/guvenilirlik
+  icin bilincli bir tercih (defense in depth), ama gecikme ve API
+  maliyetini artiriyor. "Adaptive query expansion" (ilk-gecis skoruna
+  gore expansion'i atlama) bu maliyeti azaltmak icin denendi ama
+  ampirik olarak terk edildi - bkz. `src/retrieval/pipeline.py`
+  docstring'i.
+- Recall@1 (%38) ile Recall@10 (%92) arasindaki fark, sistemin dogru
+  maddeyi COGUNLUKLA buldugunu ama onu HER ZAMAN ilk sıraya
+  tasiyamadigini gosteriyor - siralama kalitesi (reranker/embedding
+  modeli secimi) bir sonraki buyuk iyilestirme alani.
 
 ## Lisans
 MIT — bkz. [LICENSE](LICENSE)
