@@ -1,10 +1,12 @@
 import sys
+from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.retrieval.pipeline import DOC_TYPE_BOOST_MULTIPLIER, retrieve
+from src.retrieval.temporal import DEFAULT_LATEST_BOOST
 
 
 class FakeReranker:
@@ -91,6 +93,41 @@ def test_retrieve_does_not_boost_without_matching_query_type():
         )
 
     assert result.chunks[0]["rrf_score"] == 0.02
+
+
+def test_retrieve_applies_temporal_adjustment_when_doc_versions_given():
+    old_chunk = _chunk("c1", doc_id="doc-old", rrf_score=0.05)
+    new_chunk = _chunk("c2", doc_id="doc-new", rrf_score=0.05)
+    reranker = FakeReranker()
+    doc_versions = {
+        "doc-old": ("grup-x", date(2026, 1, 27)),
+        "doc-new": ("grup-x", date(2026, 6, 25)),
+    }
+
+    with patch("src.retrieval.pipeline.hybrid_search", return_value=[dict(old_chunk), dict(new_chunk)]), \
+         patch("src.retrieval.pipeline.expand_query", return_value=["soru"]), \
+         patch("src.retrieval.pipeline.get_query_type", return_value="genel_hukum"):
+        result = retrieve(
+            "soru (tarih belirtilmemis)", embedder=object(), vector_store=object(),
+            bm25_index=object(), reranker=reranker, doc_versions=doc_versions,
+        )
+
+    new_r = next(c for c in result.chunks if c["doc_id"] == "doc-new")
+    # Sorguda tarih yok -> en guncel versiyon (doc-new) boost almali.
+    assert new_r["rrf_score"] == 0.05 * DEFAULT_LATEST_BOOST
+
+
+def test_retrieve_without_doc_versions_does_not_import_or_call_temporal_logic():
+    chunk = _chunk("c1")
+    reranker = FakeReranker()
+
+    with patch("src.retrieval.pipeline.hybrid_search", return_value=[dict(chunk)]), \
+         patch("src.retrieval.pipeline.expand_query", return_value=["soru"]), \
+         patch("src.retrieval.pipeline.get_query_type", return_value="genel_hukum"), \
+         patch("src.retrieval.pipeline.apply_temporal_adjustment") as mock_temporal:
+        retrieve("soru", embedder=object(), vector_store=object(), bm25_index=object(), reranker=reranker)
+
+    mock_temporal.assert_not_called()
 
 
 def test_retrieve_attaches_ek_sibling_chunks():

@@ -24,9 +24,11 @@ retrieve() HER ZAMAN tam (expansion'li) pipeline'i calistirir.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 
 from .hybrid import hybrid_search
 from .query_expansion import QUERY_TYPE_PREFERRED_DOC_TYPES, expand_query, get_query_type
+from .temporal import apply_temporal_adjustment, extract_query_date
 
 CANDIDATE_POOL_SIZE = 30
 # 8'den 10'a cikarildi: korpusa 2 yeni Kurul Karari belgesi eklenince
@@ -84,15 +86,23 @@ def retrieve(
     bm25_index,
     reranker,
     doc_types: dict[str, str] | None = None,
+    doc_versions: dict[str, tuple[str, date]] | None = None,
 ) -> RetrievalResult:
     """
     doc_types: {doc_id: doc_type} - verilirse ve soru "guncel_deger" tipi
     cikarsa, tercih edilen doc_type'lardaki (orn. "karar") sonuclarin
     rrf_score'u DOC_TYPE_BOOST_MULTIPLIER ile carpilir.
+
+    doc_versions: {doc_id: (version_group, effective_from)} - verilirse,
+    ayni version_group'u paylasan (orn. bir yonetmeligin konsolide metni
+    + degisikligi) adaylar arasinda sorudan cikarilan tarihe (ya da tarih
+    yoksa "en guncel versiyon" varsayilanina) gore one cikarma/geri plana
+    itme uygulanir (bkz. src/retrieval/temporal.py).
     """
     sub_queries = expand_query(question, embedder=embedder)
     query_type = get_query_type(question, embedder=embedder)
     preferred_doc_types = QUERY_TYPE_PREFERRED_DOC_TYPES.get(query_type, [])
+    query_date = extract_query_date(question) if doc_versions else None
 
     candidates_by_id: dict[str, dict] = {}
     per_query_results: list[list[dict]] = []
@@ -104,6 +114,9 @@ def retrieve(
             for r in sq_results:
                 if doc_types.get(r.get("doc_id")) in preferred_doc_types:
                     r["rrf_score"] *= DOC_TYPE_BOOST_MULTIPLIER
+        if doc_versions:
+            apply_temporal_adjustment(sq_results, query_date, doc_versions)
+        if (doc_types and preferred_doc_types) or doc_versions:
             sq_results.sort(key=lambda r: r["rrf_score"], reverse=True)
         per_query_results.append(sq_results)
         for r in sq_results:

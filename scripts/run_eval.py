@@ -18,6 +18,7 @@ kurduğumuz doğrulama mekanizmasının aynısı.
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -53,6 +54,14 @@ DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 # pipeline.py docstring'i). Artik ikisi de ayni retrieve() fonksiyonunu
 # ayni DOC_TYPES haritasiyla cagiriyor.
 DOC_TYPES = {s.doc_id: s.doc_type for s in SOURCES}
+# Temporal/version-aware retrieval (bkz. src/retrieval/temporal.py) - ayni
+# mantikla, run_eval.py'nin de web/app.py ile AYNI DOC_VERSIONS haritasini
+# kullanmasi gerekir (aksi halde bu da yeni bir drift kaynagi olur).
+DOC_VERSIONS = {
+    s.doc_id: (s.version_group, date.fromisoformat(s.effective_from))
+    for s in SOURCES
+    if s.version_group and s.effective_from
+}
 
 
 def _normalize_article(article: str) -> tuple[str, str]:
@@ -108,7 +117,10 @@ def run_single_question(
 ) -> dict:
     retrieval_start = time.perf_counter()
     q_text = question["question"]
-    retrieval = retrieve(q_text, embedder, vector_store, bm25_index, reranker, doc_types=DOC_TYPES)
+    retrieval = retrieve(
+        q_text, embedder, vector_store, bm25_index, reranker,
+        doc_types=DOC_TYPES, doc_versions=DOC_VERSIONS,
+    )
     reranked = retrieval.chunks
     retrieval_latency = time.perf_counter() - retrieval_start
 

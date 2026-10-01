@@ -32,6 +32,18 @@ class SourceDoc:
     # bilinmesi gereken not (ör. "bu konsolide metin şu tarihli değişikliği
     # henüz içermiyor olabilir"). Boşsa herhangi bir uyarı yok demektir.
     completeness_note: str = ""
+    # Faz 14 (temporal/version-aware retrieval): ayni duzenlemenin FARKLI
+    # tarihli versiyonlari ayri SourceDoc olarak korpusta bulunuyorsa (orn.
+    # "...-2026-01-27" konsolide metin + "...-2026-06-25-degisiklik"), bu
+    # ikisini ayni version_group string'iyle isaretle. Boylece retrieval,
+    # sorguda bir tarih gecip gecmedigine gore (bkz. src/retrieval/temporal.py)
+    # bu gruptaki DOGRU versiyonu one cikarabilir - aksi halde iki versiyon
+    # esit agirlikta yarisir ve hangisinin secildigi retrieval sansina kalir.
+    # Versiyon belirsizligi olmayan belgeler icin ikisi de None birakilir.
+    version_group: str | None = None
+    # ISO tarih (YYYY-MM-DD) - bu versiyonun hangi tarihten itibaren
+    # yururlukte oldugu. version_group doluysa BU DA dolu olmali.
+    effective_from: str | None = None
 
 
 SOURCES: list[SourceDoc] = [
@@ -80,6 +92,8 @@ SOURCES: list[SourceDoc] = [
             "uyarısı verilmesi gerekebilir (Faz 9: hallucination guard "
             "kapsamında ele alınacak)."
         ),
+        version_group="baglanti-sistem-kullanim",
+        effective_from="2026-01-27",
     ),
     SourceDoc(
         doc_id="yonetmelik-baglanti-sistem-kullanim-2026-06-25-degisiklik",
@@ -94,6 +108,8 @@ SOURCES: list[SourceDoc] = [
             "Bu belge tam metin değil, yalnızca değişiklik metnidir. "
             "İlgili tam metin: yonetmelik-baglanti-sistem-kullanim-2026-01-27."
         ),
+        version_group="baglanti-sistem-kullanim",
+        effective_from="2026-06-25",
     ),
     SourceDoc(
         doc_id="yonetmelik-hizmet-kalitesi",

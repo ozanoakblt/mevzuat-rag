@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -63,6 +63,13 @@ DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 # tek bir yerde tutuluyor (bkz. o modulun docstring'i - eskiden web/app.py
 # ve scripts/run_eval.py arasinda surukleme/drift riski vardi).
 DOC_TYPES = {s.doc_id: s.doc_type for s in SOURCES}
+# Temporal/version-aware retrieval (bkz. src/retrieval/temporal.py):
+# version_group'u olan SourceDoc'lar icin {doc_id: (version_group, effective_from)}.
+DOC_VERSIONS = {
+    s.doc_id: (s.version_group, date.fromisoformat(s.effective_from))
+    for s in SOURCES
+    if s.version_group and s.effective_from
+}
 
 # --- Bileşenler: sunucu başlarken bir kez yüklenir ---
 _state: dict = {}
@@ -142,6 +149,7 @@ def ask(req: AskRequest) -> AskResponse:
         _state["bm25_index"],
         _state["reranker"],
         doc_types=DOC_TYPES,
+        doc_versions=DOC_VERSIONS,
     )
     top_chunks = retrieval.chunks
 
