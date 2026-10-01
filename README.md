@@ -11,9 +11,9 @@ numarası ve alıntı göstererek cevap üretir.
 
 ## Ekran görüntüleri
 
-| Arayüz | Örnek cevap |
-|---|---|
-| ![Arayüz](docs/screenshots/arayuz.png) | ![Cevap](docs/screenshots/cevap.png) |
+| Arayüz | Cevap üretiliyor | Örnek cevap (formül + kaynaklar) |
+|---|---|---|
+| ![Arayüz](docs/screenshots/arayuz.png) | ![Üretim animasyonu](docs/screenshots/uretim-animasyonu.webp) | ![Cevap](docs/screenshots/cevap.webp) |
 
 ## Pipeline
 
