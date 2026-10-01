@@ -159,6 +159,15 @@ function escapeAttr(str) {
     .replace(/>/g, "&gt;");
 }
 
+function renderInlineMarkdown(text) {
+  let html = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\[(\d+)\]/g, '<span class="cite" data-cite="$1">$1</span>');
+  return html;
+}
+
+const _BULLET_RE = /^[-*]\s+(.*)$/;
+const _ORDERED_RE = /^\d+[.)]\s+(.*)$/;
+
 function renderAnswerBody(rawText) {
   const splitIdx = rawText.search(/Kaynak Alıntıları:?/i);
   let mainText = splitIdx >= 0 ? rawText.slice(0, splitIdx).trim() : rawText.trim();
@@ -169,18 +178,62 @@ function renderAnswerBody(rawText) {
   }
   mainText = lines.join("\n").trim();
 
-  const paragraphs = mainText
+  const blockLines = mainText
     .split(/\n{1,}/)
-    .map((p) => p.trim())
+    .map((l) => l.trim())
     .filter(Boolean);
 
-  return paragraphs
-    .map((p) => {
-      let html = escapeHtml(p).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-      html = html.replace(/\[(\d+)\]/g, '<span class="cite" data-cite="$1">$1</span>');
-      return `<p>${html}</p>`;
-    })
-    .join("");
+  // Ardisik "- " / "* " / "1. " satirlarini TEK bir <ul>/<ol> blogunda
+  // grupla - eskiden her satir ayri bir <p> oluyordu, liste isareti
+  // (-/*) duz metin olarak gorunuyordu (gercek bir vakada tespit edildi:
+  // "- SBSAYI: 0 TL ..." gibi tanim listeleri cirkin duz paragraflar
+  // olarak basiliyordu).
+  const htmlParts = [];
+  let i = 0;
+  while (i < blockLines.length) {
+    const line = blockLines[i];
+    const bulletMatch = line.match(_BULLET_RE);
+    const orderedMatch = !bulletMatch && line.match(_ORDERED_RE);
+
+    if (bulletMatch || orderedMatch) {
+      const re = bulletMatch ? _BULLET_RE : _ORDERED_RE;
+      const tag = bulletMatch ? "ul" : "ol";
+      const items = [];
+      while (i < blockLines.length) {
+        const m = blockLines[i].match(re);
+        if (!m) break;
+        items.push(`<li>${renderInlineMarkdown(m[1])}</li>`);
+        i += 1;
+      }
+      htmlParts.push(`<${tag}>${items.join("")}</${tag}>`);
+    } else {
+      htmlParts.push(`<p>${renderInlineMarkdown(line)}</p>`);
+      i += 1;
+    }
+  }
+
+  return htmlParts.join("");
+}
+
+function renderMathIn(el) {
+  // KaTeX auto-render scriptleri `defer` ile yukleniyor - cok nadir bir
+  // yaris durumunda (ilk cevap, script tam yuklenmeden gelirse) sessizce
+  // atla, uygulamayi kilitleme.
+  if (typeof window.renderMathInElement !== "function") return;
+  try {
+    window.renderMathInElement(el, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+      ],
+      throwOnError: false,
+    });
+  } catch (err) {
+    // KaTeX render hatasi (bozuk/yarim LaTeX) cevabi ham metin olarak
+    // birakir - sessizce yutuluyor, kullaniciyi engellemez.
+  }
 }
 
 function renderSources(sources) {
@@ -421,4 +474,5 @@ function renderAnswer(block, question, data) {
       </span>
     </div>
   `;
+  renderMathIn(block.querySelector(".a-body"));
 }

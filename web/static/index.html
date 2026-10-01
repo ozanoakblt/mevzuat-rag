@@ -7,6 +7,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<!-- Cevaplarda gecen LaTeX formulleri ($$...$$) eskiden ham metin olarak
+     gorunuyordu (gercek bir vakada tespit edildi - teknik kalite bedeli
+     formulu "$$\text{OTMSAYI} = ...$$" diye duz metin basiliyordu).
+     KaTeX auto-render, render edilmis HTML icindeki metin dugumlerini
+     tarayip $$/$ sinirlayicilarini DOM'da yerinde matematik olarak
+     cizer - renderAnswerBody'nin mevcut escape/paragraf mantigina
+     dokunmaya gerek kalmadan. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>

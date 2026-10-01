@@ -222,6 +222,23 @@ button, textarea, input { font-family: inherit; color: inherit; }
 .a-body p { margin: 0 0 14px; }
 .a-body p:last-child { margin-bottom: 0; }
 .a-body strong { color: var(--text); font-weight: 600; }
+.a-body ul, .a-body ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+.a-body ul:last-child, .a-body ol:last-child { margin-bottom: 0; }
+.a-body li { margin-bottom: 6px; }
+.a-body li:last-child { margin-bottom: 0; }
+/* KaTeX'in varsayilan beyaz-arkaplan varsayan renkleri koyu temaya gore
+   ezildi - formul metni (--text) ile uyumlu, display-mode formuller
+   yatay tasarsa kendi ici kaydirma alsin (uzun formul tum kutuyu
+   genisletmesin). */
+.a-body .katex { color: var(--text); font-size: 1.05em; }
+.a-body .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
 .a-body .cite {
   display: inline-flex;
   align-items: center;
