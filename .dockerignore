@@ -9,3 +9,10 @@ tests/
 .env
 .env.example
 README.md
+# Deney/olcum artifaktlari - imaja girmemeli (canli data/vector_store KASITLI olarak girer)
+data/vector_store_*/
+data/embedding_compare_cache/
+mlflow.db
+mlruns/
+mlartifacts/
+eval/results_ONCESI*.json
