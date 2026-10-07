@@ -877,7 +877,7 @@ body.generating .source-panel::before { animation-delay: 1s; }
 
 /* "Bunu mu sormak istediniz?" onerileri - dusuk guvenli cevaplarda */
 .suggest-box {
-  margin-top: 14px;
+  margin-bottom: 4px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);

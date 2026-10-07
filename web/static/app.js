@@ -472,6 +472,7 @@ function renderAnswer(block, question, data) {
   renderSourcePanel(data.sources, block, isLow);
 
   block.querySelector(".answer-block").innerHTML = `
+    ${renderSuggestions(data.suggested_questions)}
     <div class="a-body">${bodyHtml}</div>
     ${data.warnings ? `<div class="warning-line">${escapeHtml(data.warnings)}</div>` : ""}
 
@@ -490,7 +491,6 @@ function renderAnswer(block, question, data) {
         <span class="led"></span>${isLow ? "Düşük güven" : "Yüksek güven"}
       </span>
     </div>
-    ${renderSuggestions(data.suggested_questions)}
   `;
   renderMathIn(block.querySelector(".a-body"));
 }
