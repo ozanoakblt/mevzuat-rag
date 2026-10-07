@@ -439,7 +439,11 @@ async function askQuestion(question) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `İstek başarısız (${res.status})`);
+      // 422 (dogrulama hatasi) detail'i liste olarak doner - duz metne cevir.
+      const detail = Array.isArray(err.detail)
+        ? "Soru geçersiz veya çok uzun (en fazla 2000 karakter)."
+        : err.detail;
+      throw new Error(detail || `İstek başarısız (${res.status})`);
     }
     const data = await res.json();
     renderAnswer(block, question, data);

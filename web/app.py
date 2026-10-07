@@ -16,7 +16,9 @@ sunucu açılışı birkaç saniye sürer.
 from __future__ import annotations
 
 import json
+import os
 import sys
+import threading
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -32,12 +34,13 @@ except ImportError:
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from src.common.rate_limiter import SlidingWindowRateLimiter
 from src.embedding.embedder import Embedder
 from src.embedding.vector_store import VectorStore, load_all_chunks
 from src.generation.answer_generator import generate_answer
@@ -59,6 +62,60 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 # yere kaydedilmiyordu (gercek kullanim verisi tamamen kayboluyordu).
 # JSONL: her satir bagimsiz bir kayit, append-only, kolayca analiz edilir.
 FEEDBACK_LOG_PATH = ROOT / "data" / "user_feedback.jsonl"
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+# --- Guvenlik/kaynak sinirlari (hepsi env ile ayarlanabilir) ---
+# Her /api/ask cagrisi 3 LLM istegi tetikler (cevap + applicability + claim
+# verifier) - kontrolsuz istek API kotasini ve maliyeti hizla tuketir.
+MAX_QUESTION_LENGTH = 2000
+ASK_RATE_LIMIT_PER_MINUTE = _env_int("ASK_RATE_LIMIT_PER_MINUTE", 10)
+FEEDBACK_RATE_LIMIT_PER_MINUTE = _env_int("FEEDBACK_RATE_LIMIT_PER_MINUTE", 30)
+MAX_CONCURRENT_ASKS = _env_int("MAX_CONCURRENT_ASKS", 3)
+# Frontend ayni origin'den servis edildigi icin CORS normalde gerekmez; baska
+# bir origin'den erisim gerekirse ALLOWED_ORIGINS="https://a.com,https://b.com".
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        "ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000"
+    ).split(",")
+    if o.strip()
+]
+
+_ask_limiter = SlidingWindowRateLimiter(ASK_RATE_LIMIT_PER_MINUTE)
+_feedback_limiter = SlidingWindowRateLimiter(FEEDBACK_RATE_LIMIT_PER_MINUTE)
+_ask_slots = threading.BoundedSemaphore(MAX_CONCURRENT_ASKS)
+
+
+def _client_key(request: Request) -> str:
+    # Ters-proxy arkasinda X-Forwarded-For'a KASITLI olarak guvenilmiyor
+    # (istemci sahteleyip limiti asabilir); proxy kullaniliyorsa limit
+    # proxy seviyesinde uygulanmali.
+    return request.client.host if request.client else "unknown"
+
+
+def _rate_limit(limiter: SlidingWindowRateLimiter, request: Request) -> None:
+    retry_after = limiter.check(_client_key(request))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Çok fazla istek. Lütfen biraz bekleyip tekrar deneyin.",
+            headers={"Retry-After": str(int(retry_after) + 1)},
+        )
+
+
+def rate_limit_ask(request: Request) -> None:
+    _rate_limit(_ask_limiter, request)
+
+
+def rate_limit_feedback(request: Request) -> None:
+    _rate_limit(_feedback_limiter, request)
 
 DOC_TITLES = {s.doc_id: s.title for s in SOURCES}
 # doc_type boost ve diger retrieval sabitleri artik src/retrieval/pipeline.py'de
@@ -97,14 +154,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Elektrik Dağıtım Mevzuat Asistanı", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 
 class AskRequest(BaseModel):
-    question: str
+    question: str = Field(max_length=MAX_QUESTION_LENGTH)
 
 
 class SourceOut(BaseModel):
@@ -129,15 +186,32 @@ class AskResponse(BaseModel):
 
 
 class FeedbackRequest(BaseModel):
-    question: str
-    answer: str
-    vote: str  # "up" | "down"
-    confidence_level: str | None = None
-    source_count: int = 0
+    # Uzunluk sinirlari, feedback log dosyasinin kotuye kullanimla
+    # sisirilmesini onler.
+    question: str = Field(max_length=MAX_QUESTION_LENGTH)
+    answer: str = Field(max_length=30000)
+    vote: str = Field(max_length=10)  # "up" | "down"
+    confidence_level: str | None = Field(default=None, max_length=20)
+    source_count: int = Field(default=0, ge=0, le=1000)
 
 
-@app.post("/api/ask", response_model=AskResponse)
+@app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(rate_limit_ask)])
 def ask(req: AskRequest) -> AskResponse:
+    # Ayni anda islenen cevap sayisini sinirla (embedding/reranker CPU'da
+    # calisiyor, her cevap 3 LLM cagrisi) - dolu ise bekletmek yerine 503.
+    if not _ask_slots.acquire(blocking=False):
+        raise HTTPException(
+            status_code=503,
+            detail="Sistem şu an meşgul. Lütfen birkaç saniye sonra tekrar deneyin.",
+            headers={"Retry-After": "5"},
+        )
+    try:
+        return _ask(req)
+    finally:
+        _ask_slots.release()
+
+
+def _ask(req: AskRequest) -> AskResponse:
     question = req.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Soru boş olamaz.")
@@ -234,7 +308,7 @@ def ask(req: AskRequest) -> AskResponse:
     )
 
 
-@app.post("/api/feedback")
+@app.post("/api/feedback", dependencies=[Depends(rate_limit_feedback)])
 def feedback(req: FeedbackRequest) -> dict:
     if req.vote not in ("up", "down"):
         raise HTTPException(status_code=400, detail="vote 'up' veya 'down' olmalı.")
