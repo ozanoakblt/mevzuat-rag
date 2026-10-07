@@ -57,8 +57,33 @@ _SYNONYM_BRIDGES: dict[str, str] = {
 }
 
 
+# Hukuki referans token'lari. Genel tokenizer "10/A"yi "10" + "a"ya boler ve
+# tek karakterli "a"yi (ve tek haneli madde numaralarini, orn. "EK MADDE 5"
+# icindeki "5"i) len>1 filtresiyle atar - yani "MADDE 5/A" ile "MADDE 5"
+# ya da "EK MADDE 5" ile "MADDE 5" BM25 icin ayirt edilemez hale gelir
+# (madde numarasi catismasi, bkz. eval q04). Bu desenler, referansi TEK bir
+# ayirt edici token olarak ekler; mevcut parcali token'lar da korunur (bu
+# yuzden sadece EK token uretir, hicbir mevcut eslesmeyi kaldirmaz).
+_MADDE_REF_RE = re.compile(r"\b(?:(ek|geçici)\s+)?madde\s+(\d+(?:/[a-zçğıöşü])?)(?![a-zçğıöşü0-9])")
+_SLASH_NUM_RE = re.compile(r"(?<![a-zçğıöşü0-9/])(\d+/[a-zçğıöşü])(?![a-zçğıöşü0-9])")
+_DATE_RE = re.compile(r"(?<![0-9])(\d{1,2})[./](\d{1,2})[./](\d{4})(?![0-9])")
+
+
+def _legal_reference_tokens(lowered: str) -> list[str]:
+    tokens = []
+    for m in _MADDE_REF_RE.finditer(lowered):
+        prefix = f"{m.group(1)}_" if m.group(1) else ""
+        tokens.append(f"{prefix}madde_{m.group(2)}")
+    tokens.extend(m.group(1) for m in _SLASH_NUM_RE.finditer(lowered))
+    tokens.extend(
+        f"{int(d):02d}.{int(mo):02d}.{y}" for d, mo, y in _DATE_RE.findall(lowered)
+    )
+    return tokens
+
+
 def turkish_tokenize(text: str) -> list[str]:
     lowered = turkish_lower(text)
     tokens = _TOKEN_RE.findall(lowered)
     tokens = [t for t in tokens if t not in STOPWORDS and len(t) > 1]
-    return [_SYNONYM_BRIDGES.get(t, t) for t in tokens]
+    tokens = [_SYNONYM_BRIDGES.get(t, t) for t in tokens]
+    return tokens + _legal_reference_tokens(lowered)
