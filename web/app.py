@@ -47,6 +47,7 @@ from src.generation.claim_verifier import verify_claims
 from src.ingestion.sources import SOURCES
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.pipeline import retrieve
+from src.retrieval.question_bank import QuestionBank
 from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -85,6 +86,9 @@ async def lifespan(app: FastAPI):
     _state["vector_store"] = VectorStore(persist_dir=VECTOR_STORE_DIR)
     _state["bm25_index"] = BM25Index(chunks)
     _state["reranker"] = Reranker()
+    _state["question_bank"] = QuestionBank.build(
+        _state["embedder"], ROOT / "eval" / "eval_set.json"
+    )
     print(f"Pipeline hazır ({time.time() - t0:.1f}s, {len(chunks)} chunk).")
     yield
     _state.clear()
@@ -121,6 +125,7 @@ class AskResponse(BaseModel):
     warnings: str
     applicability_checked: bool
     claim_verification_checked: bool
+    suggested_questions: list[str] = []
 
 
 class FeedbackRequest(BaseModel):
@@ -211,6 +216,13 @@ def ask(req: AskRequest) -> AskResponse:
             warnings + "\n" if warnings else ""
         ) + f"UYARI - DESTEKLENMEYEN İDDİA: Şu iddia(lar) gösterdiği kaynaktan daha güçlü/farklı bir şey söylüyor olabilir: {unsupported_texts}. Kaynak metni dikkatle karşılaştırın."
 
+    suggested_questions: list[str] = []
+    bank = _state.get("question_bank")
+    if is_low_confidence and bank is not None:
+        # Dusuk guvenli cevapta "bunu mu sormak istediniz?" onerileri
+        # (soru bankasindan en yakin sorular, ekstra LLM cagrisi yok).
+        suggested_questions = bank.suggest(_state["embedder"].embed_query(question))
+
     return AskResponse(
         answer=answer,
         sources=sources,
@@ -218,6 +230,7 @@ def ask(req: AskRequest) -> AskResponse:
         warnings=warnings,
         applicability_checked=applicability.checked,
         claim_verification_checked=claim_verification.checked,
+        suggested_questions=suggested_questions,
     )
 
 

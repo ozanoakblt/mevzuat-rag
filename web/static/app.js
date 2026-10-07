@@ -215,6 +215,18 @@ function renderAnswerBody(rawText) {
   return htmlParts.join("");
 }
 
+function renderSuggestions(questions) {
+  if (!questions || !questions.length) return "";
+  const chips = questions
+    .map((q) => `<button type="button" class="suggest-chip" data-suggest="${escapeAttr(q)}">${escapeHtml(q)}</button>`)
+    .join("");
+  return `
+    <div class="suggest-box">
+      <div class="suggest-title">Bunu mu sormak istediniz?</div>
+      <div class="suggest-list">${chips}</div>
+    </div>`;
+}
+
 function renderMathIn(el) {
   // KaTeX auto-render scriptleri `defer` ile yukleniyor - cok nadir bir
   // yaris durumunda (ilk cevap, script tam yuklenmeden gelirse) sessizce
@@ -354,6 +366,11 @@ qaScrollEl.addEventListener("click", (e) => {
     }
     return;
   }
+  const suggestBtn = e.target.closest("[data-suggest]");
+  if (suggestBtn) {
+    askQuestion(suggestBtn.dataset.suggest);
+    return;
+  }
   const retryBtn = e.target.closest("[data-retry]");
   if (retryBtn) {
     askQuestion(retryBtn.dataset.retry);
@@ -473,6 +490,7 @@ function renderAnswer(block, question, data) {
         <span class="led"></span>${isLow ? "Düşük güven" : "Yüksek güven"}
       </span>
     </div>
+    ${renderSuggestions(data.suggested_questions)}
   `;
   renderMathIn(block.querySelector(".a-body"));
 }

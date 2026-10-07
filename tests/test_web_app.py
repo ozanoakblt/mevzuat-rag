@@ -330,3 +330,54 @@ def test_health_endpoint_reports_ok_when_ready():
     health = web_app.health()
     assert health["status"] == "ok"
 
+
+
+class _FakeEmbedder:
+    def embed_query(self, text):
+        return [1.0, 0.0]
+
+
+class _FakeBank:
+    def suggest(self, vec, k=3):
+        return ["Oneri 1?", "Oneri 2?"]
+
+
+def _run_ask_with(confidence_chunks_score, guard_warn):
+    web_app._state["vector_store"] = FakeVectorStore()
+    web_app._state["embedder"] = _FakeEmbedder()
+    web_app._state["bm25_index"] = object()
+    web_app._state["reranker"] = object()
+    web_app._state["question_bank"] = _FakeBank()
+    chunk = {
+        "chunk_id": "d::m1", "doc_id": "kanun-6446", "madde_kind": "MADDE", "madde_no": "1",
+        "fikra_no": None, "bent_no": None, "madde_baslik": None,
+        "text": "Bu maddenin amaci test etmektir.", "rerank_score": confidence_chunks_score,
+    }
+    retrieval = RetrievalResult(chunks=[chunk], query_type=None, sub_queries=["q"])
+    ok = ApplicabilityResult(applicable=True, reason="", checked=True)
+    try:
+        with patch.object(web_app, "retrieve", return_value=retrieval), patch.object(
+            web_app, "generate_answer", return_value="Cevap [1]."
+        ), patch.object(web_app, "check_applicability", return_value=ok), patch.object(
+            web_app, "verify_claims", return_value=NO_CLAIM_ISSUES
+        ):
+            return web_app.ask(web_app.AskRequest(question="soru"))
+    finally:
+        web_app._state.pop("question_bank", None)
+
+
+def test_ask_returns_suggested_questions_when_low_confidence():
+    # Negatif rerank skoru -> citation_guard dusuk guven isaretler.
+    result = _run_ask_with(-3.0, True)
+    assert result.confidence_level == "low"
+    assert result.suggested_questions == ["Oneri 1?", "Oneri 2?"]
+
+
+def test_ask_has_no_suggestions_when_confidence_is_high():
+    from src.generation.citation_guard import GuardResult
+
+    high = GuardResult(is_low_confidence=False, best_rerank_score=5.0)
+    with patch.object(web_app, "run_guard", return_value=high):
+        result = _run_ask_with(5.0, False)
+    assert result.confidence_level == "high"
+    assert result.suggested_questions == []

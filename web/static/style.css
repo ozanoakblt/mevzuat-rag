@@ -874,3 +874,35 @@ body.generating .source-panel::before { animation-delay: 1s; }
     opacity: 0.5;
   }
 }
+
+/* "Bunu mu sormak istediniz?" onerileri - dusuk guvenli cevaplarda */
+.suggest-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+.suggest-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.suggest-list { display: flex; flex-direction: column; gap: 6px; }
+.suggest-chip {
+  text-align: left;
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.suggest-chip:hover { border-color: var(--accent); background: rgba(91, 157, 255, 0.22); }
