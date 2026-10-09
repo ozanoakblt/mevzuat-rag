@@ -152,18 +152,18 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db
 
 ### Güncel sonuçlar
 
-**Retrieval (N=92, tam eval seti, sadece retrieval — `scripts/run_eval.py`):**
+**Retrieval (N=92, tam eval seti, sadece retrieval — `scripts/run_eval.py`, hukuki-token BM25 tokenizer'ı ile):**
 
 | Metrik | Değer |
 |---|---:|
-| Recall@1 | 38.4% |
+| Recall@1 | 39.5% |
 | Recall@3 | 74.4% |
 | Recall@5 | 84.9% |
 | Recall@10 (final top-K) | 91.9% |
-| MRR | 0.596 |
-| MRR@5 | 0.583 |
-| MRR@10 | 0.592 |
-| Ortalama retrieval gecikmesi | 8.7s |
+| MRR | 0.601 |
+| MRR@5 | 0.588 |
+| MRR@10 | 0.598 |
+| Ortalama retrieval gecikmesi | 7.6s |
 
 **Generation (N=30, dengeli örneklem, `--with-generation` — `scripts/run_eval.py --sample 30 --with-generation`):**
 
@@ -181,6 +181,25 @@ ve genelde daha yüksek çıkar — bkz. `scripts/run_eval.py` içindeki
 "doğru maddeyi bulması" ile "ilk sıraya koyması" arasındaki fark) hâlâ
 açık bir iyileştirme alanı; sistem çoğu zaman doğru maddeyi buluyor ama
 onu her zaman en üste taşıyamıyor.
+
+### Denenen iyileştirmeler (MLflow'da kayıtlı)
+
+Hepsi aynı 92 soruluk set üzerinde ölçüldü; "kazanmayan" denemeler de bilerek
+kayıtta bırakıldı:
+
+| Deney | Sonuç | Karar |
+|---|---|---|
+| Reranker: `bge-reranker-v2-m3` (MiniLM yerine) | Recall@10 91.9→94.2%, ama Recall@1/MRR iyileşmedi, retrieval **9x yavaş** (9s→79s) | Reddedildi |
+| Embedding (alt-küme, dense-only): `bge-m3`, `e5-large` vs `e5-base` | Recall@1 76.7→79.1%, MRR 0.862→0.88 (86 soruda ~2 soru farkı), 3-4x yavaş | — |
+| Embedding (tam pipeline, `raw-` belgesiz indeks): `bge-m3` vs `e5-base` | `bge-m3` **daha kötü**: Recall@1 58.1% vs 61.6%, MRR 0.697 vs 0.722 | `e5-base`'te kalındı |
+| Adaptive query expansion (güvenli görünen sorularda expansion'ı atla) | Orijinal 46 soruda Recall@8 95.7→84.8%: rerank skoru "doğru pasaj mı" için güvenilir bir sinyal değil | Geri alındı |
+| BM25 hukuki tokenizer (`10/A`, `EK MADDE 5`, tarihler) | Recall@1 38.4→39.5%, MRR 0.596→0.601 (küçük kazanç, zarar yok) | Tutuldu |
+
+**Önemli gözlem:** Korpusun yaklaşık %57'si toplu içe aktarılmış `raw-*`
+belgelerden oluşuyor. Bu belgeler dense indeksten çıkarıldığında Recall@1
+%39.5 → %61.6'ya çıkıyor: sıralama kalitesindeki asıl darboğaz model seçimi
+değil, korpus içindeki benzer/ilgisiz belgelerin rekabeti. Belgeler bilinçli
+olarak korpusta tutuluyor; bu, açık bir iyileştirme alanı olarak duruyor.
 
 *Metin açıklaması: Recall@K, beklenen madde/belgenin reranker'ın ilk K
 sonucunda bulunma oranı. "Negative test" soruları, kaynak metinde cevabı
@@ -219,7 +238,7 @@ pytest tests/ -v
   gore expansion'i atlama) bu maliyeti azaltmak icin denendi ama
   ampirik olarak terk edildi - bkz. `src/retrieval/pipeline.py`
   docstring'i.
-- Recall@1 (%38) ile Recall@10 (%92) arasindaki fark, sistemin dogru
+- Recall@1 (%39.5) ile Recall@10 (%92) arasindaki fark, sistemin dogru
   maddeyi COGUNLUKLA buldugunu ama onu HER ZAMAN ilk sıraya
   tasiyamadigini gosteriyor - siralama kalitesi (reranker/embedding
   modeli secimi) bir sonraki buyuk iyilestirme alani.
