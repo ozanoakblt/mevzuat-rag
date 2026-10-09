@@ -51,7 +51,7 @@ from src.retrieval.reranker import DEFAULT_RERANKER_MODEL, Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = ROOT / "data" / "processed"
-VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
+VECTOR_STORE_DIR = Path(os.environ.get("VECTOR_STORE_DIR") or ROOT / "data" / "vector_store")
 EVAL_SET_PATH = ROOT / "eval" / "eval_set.json"
 RESULTS_PATH = ROOT / "eval" / "results.json"
 

@@ -24,3 +24,5 @@ logs/
 mlruns/
 mlartifacts/
 mlflow.db
+data/embedding_compare_cache/
+data/vector_store_*/

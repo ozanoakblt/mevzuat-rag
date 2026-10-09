@@ -55,7 +55,7 @@ from src.retrieval.reranker import Reranker
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = ROOT / "data" / "processed"
-VECTOR_STORE_DIR = ROOT / "data" / "vector_store"
+VECTOR_STORE_DIR = Path(os.environ.get("VECTOR_STORE_DIR") or ROOT / "data" / "vector_store")
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 # Kullanicinin 👍/👎 geri bildirimini kalici olarak biriktirir - onceden
 # arayuzdeki oy butonlari sadece gorsel bir CSS class toggle'iydi, hicbir
